@@ -14,12 +14,12 @@ defmodule LovelaceWeb.GoogleComponents do
       <.icon name="hero-key" class="empty-state-mark size-6" />
       <div class="empty-state-body">
         <div class="mail-account-identity">
-          <p class="mail-eyebrow">Gmail &amp; Calendar</p>
+          <p class="mail-eyebrow">Gmail · Calendar · YouTube</p>
           <h3 id="google-heading" class="empty-state-title">
             {if @status == :stored, do: "Google client", else: "Set up Google"}
           </h3>
           <p class="empty-state-copy">
-            Use your own Google Cloud Desktop OAuth client for Gmail and Calendar.
+            Use your own Google Cloud Desktop OAuth client for Gmail, Calendar and YouTube.
             These shared settings do not connect an account or grant access.
           </p>
           <p id="google-status" class="mail-muted" role="status">
@@ -98,7 +98,9 @@ defmodule LovelaceWeb.GoogleComponents do
         <p :if={@status == :stored} class="empty-state-copy">
           Next, connect an account in
           <.link patch="/connections/gmail" class="workspace-action-link">Gmail</.link>
-          and optionally enable <.link patch="/connections/calendar" class="workspace-action-link">Calendar</.link>.
+          and optionally enable
+          <.link patch="/connections/calendar" class="workspace-action-link">Calendar</.link>
+          or <.link patch="/connections/youtube" class="workspace-action-link">YouTube</.link>.
           Gemini uses a separate API key.
         </p>
       </div>
@@ -115,9 +117,9 @@ defmodule LovelaceWeb.GoogleComponents do
         One client can be reused for several Google accounts and workspaces.
       </p>
       <p>
-        Replacing settings does not disconnect accounts or change their grants.
-        Existing accounts may need to reconnect if you switch Google Cloud clients.
-        Gmail and Calendar each require explicit consent; saving these settings does not verify Google access.
+        Replacing settings with a different client requires accounts to authorize again and clears
+        their local Calendar and YouTube snapshots. Saving identical settings preserves access.
+        Gmail, Calendar and YouTube each require explicit consent; saving settings does not verify Google access.
       </p>
     </details>
     """

@@ -357,7 +357,11 @@ defmodule Lovelace.Mail.Operations do
 
     # Keep the latest failure/cooldown read and its write in one short SQLite
     # transaction, so a concurrent failure cannot overwrite a newer rate limit.
-    Ash.transact(Account, fn -> persist_failure(account, reason, actor) end)
+    case Ash.transact(Account, fn -> persist_failure(account, reason, actor) end) do
+      {:ok, {:ok, _}} -> Access.broadcast_health(account.id)
+      _ -> :ok
+    end
+
     cached_failure(cached, reason)
   end
 
@@ -532,8 +536,7 @@ defmodule Lovelace.Mail.Operations do
   end
 
   @doc false
-  def broadcast(id),
-    do: Phoenix.PubSub.broadcast(Lovelace.PubSub, "mail:#{id}", {:mail_changed, id})
+  def broadcast(id), do: Access.broadcast(id)
 
   defp provider, do: Access.provider()
 

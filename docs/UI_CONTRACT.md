@@ -36,6 +36,9 @@ Verify implementation in code; the coverage map below is not evidence that check
   vendored assets. No runtime CDN, font service, remote browser imagery, animated scenery
   or parallax. Server-side opted-in Gemini output is validated and served locally;
   generation/cost/storage rules belong in [STAGE_DESIGNER.md](STAGE_DESIGNER.md).
+  The sole remote browser-content exception is a freshly click-loaded official YouTube
+  nocookie iframe. Its contents remain YouTube-controlled; parent assets and thumbnails
+  stay local/absent. No ad-free or tracking-free promise.
 
 ## Action hierarchy
 
@@ -106,6 +109,12 @@ Use the same hierarchy on static setup/unlock pages and authenticated views.
 - The timer/focal-plane switch is client-only. Hidden-tab/sleep elapsed time counts;
   LiveView patches and background updates do not reset the activity timestamp. Hook teardown
   removes timers/listeners. No page load, wake or idle action starts background generation.
+- Cross-origin YouTube player keys/activity cannot reach the parent. While its iframe
+  visibly holds focus, scenery idle is suspended. Tab/Shift+Tab returns to parent controls,
+  including adjacent **Unload player**, and restarts the normal idle interval. Hidden-tab
+  elapsed time still counts and unloads an expired player on return. Escape inside belongs
+  to YouTube; outside it retains LOVELACE's normal scenery behavior. Explain this boundary
+  beside the player rather than silently interrupting keyboard playback.
 - This is **visual scenery mode, not authentication, Lock or a privacy guarantee**.
   Explicit **Lock** revokes all owner sessions, stops protected background work, closes
   the encrypted Repo and locks the dedicated credential keychain. Visual focus changes
@@ -115,6 +124,23 @@ Use the same hierarchy on static setup/unlock pages and authenticated views.
   including session disconnection and protected-work shutdown; missing individual
   credentials and locally invalid input do not. This is access-time detection, not
   continuous monitoring of macOS authorization.
+
+## YouTube
+
+- Keep per-account chronological feeds bounded and separate, with no remote thumbnails,
+  recommendations, comments, infinite scroll or auto-next. Channel selection is explicit.
+- Feed/watch URLs preserve reload, history and unlock destination. A player requires a
+  fresh trusted Load click, never route entry, reconnection or returning through history.
+- Unload on scenery idle/Escape, navigation, Lock, connection loss, account/grant/selection
+  invalidation and hook teardown. Explicit Unload restores focus to Load; other invalidations
+  must not steal focus. Player input follows the cross-origin boundary above.
+- Keep authorization, freshness, loading, empty, truncation and provider failure distinct.
+  Unavailable local state is not confirmed disabled consent and must not offer Enable as
+  recovery. Rate-limit cooldown cannot be bypassed by Refresh. Local job observation is
+  bounded and never owns the accepted durable work.
+- YouTube observes shared Google client diagnostics while its Connections page is active.
+  Keep consent disabled and show a neutral busy status until the check completes; a pending
+  check is not missing settings. Stored settings enable consent without replacing credentials.
 
 ## Entrance, gate and persistent identity
 

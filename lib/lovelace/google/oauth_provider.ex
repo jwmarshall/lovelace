@@ -9,7 +9,9 @@ defmodule Lovelace.Google.OAuthProvider do
   Each provider operation is bounded by one deadline, at most 30 seconds.
 
   Authorization uses the approved loopback callback, PKCE and Gmail-only consent
-  unless Calendar is explicitly requested. The caller owns state/session binding,
+  unless Calendar or YouTube is explicitly requested. Previously enabled optional
+  capabilities may be retained in `:capabilities`; they must never include a newly
+  unrequested optional capability. The caller owns state/session binding,
   one-use authorization codes, durable exchange claims and generation fencing.
   Token maps are private transient results: expiry is seconds, omitted refresh
   tokens are absent rather than nil, and scope lists are consent evidence rather
@@ -58,7 +60,8 @@ defmodule Lovelace.Google.OAuthProvider do
           required(:state) => binary(),
           required(:verifier) => binary(),
           required(:redirect_uri) => binary(),
-          optional(:capability) => :gmail | :calendar
+          optional(:capability) => :gmail | :calendar | :youtube,
+          optional(:capabilities) => [:calendar | :youtube]
         }
   @type identity :: %{subject: binary(), email: binary()}
 

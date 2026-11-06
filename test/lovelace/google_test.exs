@@ -83,10 +83,57 @@ defmodule Lovelace.GoogleTest do
     assert {:ok, true} = Google.save_client_credentials(@id, @secret, @owner)
     assert_received {:keychain_write, @account, json, @service}
     assert Jason.decode!(json) == %{"client_id" => @id, "client_secret" => @secret}
-    refute_received {:keychain_read, _, _}
+    assert_received {:keychain_read, @account, @service}
 
     assert Ash.get!(State, :google, actor: %{role: :connection_diagnostics}).status ==
              :unavailable
+  end
+
+  test "client replacement fences every account across ordered bounded pages" do
+    accounts =
+      for index <- 1..101 do
+        suffix = index |> Integer.to_string() |> String.pad_leading(12, "0")
+
+        Lovelace.Mail.save_connection!(
+          %{
+            id: "00000000-0000-4000-8000-" <> suffix,
+            subject: "bounded-client-subject-#{index}",
+            email: "bounded-#{102 - index}@example.invalid",
+            generation: Ash.UUID.generate(),
+            calendar_enabled: true,
+            youtube_enabled: true
+          },
+          @owner
+        )
+      end
+
+    [first | active] = accounts
+
+    disconnected =
+      Lovelace.Mail.update_account!(
+        first,
+        %{
+          expected_generation: first.generation,
+          status: :disconnected,
+          calendar_enabled: false,
+          youtube_enabled: false
+        },
+        @owner
+      )
+
+    assert {:ok, true} = Google.save_client_credentials(@id, @secret, @owner)
+
+    for account <- active do
+      current = Lovelace.Mail.get_account!(account.id, @owner)
+      assert current.generation != account.generation
+      assert current.status == :reconnect
+      refute current.calendar_enabled
+      refute current.youtube_enabled
+    end
+
+    current = Lovelace.Mail.get_account!(disconnected.id, @owner)
+    assert current.generation == disconnected.generation
+    assert current.status == :disconnected
   end
 
   test "only the local owner can inspect status or save credentials" do

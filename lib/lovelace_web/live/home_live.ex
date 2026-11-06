@@ -19,9 +19,11 @@ defmodule LovelaceWeb.HomeLive do
     HomeMail,
     HomeNavigation,
     HomeScenes,
+    HomeYouTube,
     MailComponents,
     SceneComponents,
-    WorkspaceComponents
+    WorkspaceComponents,
+    YouTubeComponents
   }
 
   # Capability minted only behind the HTTP and LiveView owner-session boundaries.
@@ -67,6 +69,7 @@ defmodule LovelaceWeb.HomeLive do
       |> HomeGoogle.init()
       |> HomeGitHub.init(session)
       |> HomeScenes.init()
+      |> HomeYouTube.init()
 
     socket = if connected?(socket), do: load_workspaces(socket), else: socket
     socket = resume_connection(socket, params)
@@ -96,6 +99,15 @@ defmodule LovelaceWeb.HomeLive do
       {:noreply, socket}
     end
   end
+
+  def handle_info({:youtube_changed, _id} = message, socket),
+    do: {:noreply, HomeYouTube.handle_info(message, socket)}
+
+  def handle_info({:google_changed, _id} = message, socket),
+    do: {:noreply, HomeYouTube.handle_info(message, socket)}
+
+  def handle_info({:youtube_observe, _token, _attempt} = message, socket),
+    do: {:noreply, HomeYouTube.handle_info(message, socket)}
 
   def handle_info(:github_tick, socket), do: github_changed(:github_tick, socket)
 
@@ -128,12 +140,15 @@ defmodule LovelaceWeb.HomeLive do
   @impl true
   def handle_event(name, params, socket) do
     {:noreply, socket} = event(name, params, socket)
-    socket = accept_event_destination(socket, name)
+    socket = socket |> accept_event_destination(name) |> HomeYouTube.sync()
     path = HomeNavigation.current(socket)
 
     {:noreply,
      if(path == socket.assigns.navigation_path, do: socket, else: push_patch(socket, to: path))}
   end
+
+  defp event("youtube:" <> _ = event, params, socket),
+    do: HomeYouTube.handle_event(event, params, socket)
 
   defp event("github:" <> _ = event, params, socket),
     do: HomeGitHub.handle_event(event, params, socket)
@@ -255,7 +270,7 @@ defmodule LovelaceWeb.HomeLive do
          %{"provider" => provider},
          %{assigns: %{connections: true}} = socket
        )
-       when provider in ["google", "gemini", "gmail", "calendar", "github"] do
+       when provider in ["google", "gemini", "gmail", "calendar", "github", "youtube"] do
     view =
       Map.fetch!(
         %{
@@ -263,7 +278,8 @@ defmodule LovelaceWeb.HomeLive do
           "gemini" => :gemini,
           "gmail" => :gmail,
           "calendar" => :calendar,
-          "github" => :github
+          "github" => :github,
+          "youtube" => :youtube
         },
         provider
       )
@@ -281,11 +297,12 @@ defmodule LovelaceWeb.HomeLive do
 
       socket =
         case view do
-          view when view in [:google, :gmail, :calendar] -> HomeGoogle.open(socket)
+          view when view in [:google, :gmail, :calendar, :youtube] -> HomeGoogle.open(socket)
           :gemini -> HomeGemini.open(socket)
           :github -> HomeGitHub.open(socket)
         end
 
+      socket = if view == :youtube, do: HomeYouTube.connections(socket), else: socket
       {:noreply, socket}
     end
   end
@@ -421,7 +438,10 @@ defmodule LovelaceWeb.HomeLive do
         else: visit(socket, params)
 
     canonical = HomeNavigation.current(socket)
-    socket = assign(socket, navigation_ready: true, navigation_path: canonical)
+
+    socket =
+      socket |> HomeYouTube.sync() |> assign(navigation_ready: true, navigation_path: canonical)
+
     if path == canonical, do: socket, else: push_patch(socket, to: canonical, replace: true)
   end
 
@@ -464,6 +484,30 @@ defmodule LovelaceWeb.HomeLive do
       if socket.assigns.connections, do: socket, else: transition(socket, "show_connections")
 
     transition(socket, "select_connection", %{"provider" => to_string(provider)})
+  end
+
+  defp visit_destination(socket, %{action: action} = destination)
+       when action in [:youtube, :youtube_video] do
+    socket =
+      socket
+      |> HomeScenes.leave()
+      |> HomeMail.leave_workspace()
+      |> directory_subscriptions([])
+      |> HomeNavigation.put(destination)
+      |> assign(selected: nil, editor: nil, form: nil, page_title: "YouTube")
+
+    case HomeYouTube.navigate(socket, destination) do
+      {:ok, socket} ->
+        focus_heading(socket)
+
+      {:error, socket} ->
+        socket
+        |> transition("show_home")
+        |> put_flash(
+          :error,
+          "This account or video is not available in the selected YouTube feed."
+        )
+    end
   end
 
   defp visit_destination(
@@ -642,6 +686,7 @@ defmodule LovelaceWeb.HomeLive do
         )
         |> HomeGitHub.reload()
         |> HomeCalendar.reload()
+        |> HomeYouTube.reload_accounts()
         |> directory_subscriptions(ids)
         |> stream(:workspaces, workspaces, reset: true)
 
@@ -687,6 +732,7 @@ defmodule LovelaceWeb.HomeLive do
       end
 
     socket
+    |> resume_youtube(params)
     |> resume_calendar(params)
     |> resume_gemini(params)
     |> resume_google(params)
@@ -700,6 +746,24 @@ defmodule LovelaceWeb.HomeLive do
   end
 
   defp resume_calendar(socket, _params), do: socket
+
+  defp resume_youtube(socket, %{"youtube" => "connected"}),
+    do:
+      put_flash(
+        socket,
+        :info,
+        "YouTube connected, read-only. Choose channels in this account’s subscriptions page."
+      )
+
+  defp resume_youtube(socket, %{"youtube" => "failed"}),
+    do:
+      put_flash(
+        socket,
+        :error,
+        "YouTube authorization was not completed. Existing Gmail and Calendar access is unchanged."
+      )
+
+  defp resume_youtube(socket, _), do: socket
 
   defp resume_gemini(socket, params) do
     if connected?(socket) && (params["connections"] == "gemini" || params["provider"] == "gemini") do
@@ -773,8 +837,9 @@ defmodule LovelaceWeb.HomeLive do
               patch="/workspaces"
               class="workspace-nav-link"
               aria-current={
-                if !@home && !@settings && !@connections && !@scenes && @mail.scope != :home,
-                  do: "page"
+                if !@home && !@settings && !@connections && !@scenes && @mail.scope != :home &&
+                     @destination.action not in [:youtube, :youtube_video],
+                   do: "page"
               }
               aria-disabled={if @editor, do: "true"}
             >Workspaces</.link>
@@ -801,6 +866,26 @@ defmodule LovelaceWeb.HomeLive do
             >Settings</.link>
           </nav>
           <SceneComponents.activity background={@background} />
+          <nav
+            :if={Enum.any?(@youtube_accounts, & &1.youtube_enabled)}
+            id="youtube-account-nav"
+            class="connections-subnav"
+            aria-label="YouTube accounts"
+          >
+            <.link
+              :for={account <- Enum.filter(@youtube_accounts, & &1.youtube_enabled)}
+              id={"youtube-nav-#{account.id}"}
+              patch={HomeNavigation.youtube_path(account.id)}
+              class="workspace-nav-link"
+              aria-current={
+                if @destination.action in [:youtube, :youtube_video] &&
+                     @destination.account_id == account.id,
+                   do: "page"
+              }
+            >
+              YouTube · {account.email}
+            </.link>
+          </nav>
         </div>
 
         <section
@@ -834,6 +919,7 @@ defmodule LovelaceWeb.HomeLive do
                   @settings -> "Settings"
                   @scenes -> "Scenes"
                   @connections -> "Connections"
+                  @destination.action in [:youtube, :youtube_video] -> "YouTube"
                   @selected -> @selected.name
                   @mail.scope == :home -> "Inbox"
                   true -> "Workspaces"
@@ -871,6 +957,12 @@ defmodule LovelaceWeb.HomeLive do
                 aria-current={if @connection_view == :calendar, do: "page"}
               >Calendar</.link>
               <.link
+                id="connections-youtube"
+                patch="/connections/youtube"
+                class="workspace-nav-link"
+                aria-current={if @connection_view == :youtube, do: "page"}
+              >YouTube</.link>
+              <.link
                 id="connections-github"
                 patch={HomeNavigation.connections_path(:github)}
                 class="workspace-nav-link"
@@ -880,7 +972,8 @@ defmodule LovelaceWeb.HomeLive do
             <button
               :if={
                 !@selected && !@settings && !@connections && !@scenes && @mail.scope != :home &&
-                  !@editor && @workspace_options != []
+                  @destination.action not in [:youtube, :youtube_video] && !@editor &&
+                  @workspace_options != []
               }
               id="new-workspace"
               type="button"
@@ -958,7 +1051,8 @@ defmodule LovelaceWeb.HomeLive do
 
           <div
             :if={
-              !@home && !@settings && !@selected && !@connections && !@scenes && @mail.scope != :home
+              !@home && !@settings && !@selected && !@connections && !@scenes && @mail.scope != :home &&
+                @destination.action not in [:youtube, :youtube_video]
             }
             class="workspace-list"
             id="workspace-list"
@@ -975,7 +1069,8 @@ defmodule LovelaceWeb.HomeLive do
           <div
             :if={
               !@home && !@settings && !@selected && !@connections && !@scenes &&
-                @mail.scope != :home && !@loading && !@workspaces_error && @workspace_options == []
+                @mail.scope != :home && @destination.action not in [:youtube, :youtube_video] &&
+                !@loading && !@workspaces_error && @workspace_options == []
             }
             id="workspaces-empty"
             class="empty-state"
@@ -1095,6 +1190,37 @@ defmodule LovelaceWeb.HomeLive do
             window={@calendar_window}
             refresh={@calendar_revision}
           />
+
+          <YouTubeComponents.connections
+            :if={@connections && @connection_view == :youtube}
+            readouts={@youtube_readouts}
+            google_status={@google_status}
+            workspace_options={@workspace_options}
+            stopped={@youtube_observation_stopped}
+            error={@youtube_error}
+          />
+
+          <YouTubeComponents.feed
+            :if={
+              @destination.action in [:youtube, :youtube_video] && @youtube_account &&
+                @youtube_snapshot
+            }
+            account={@youtube_account}
+            snapshot={@youtube_snapshot}
+            video={@youtube_video}
+            video_route={@destination.action == :youtube_video}
+            stopped={@youtube_observation_stopped}
+          />
+          <p
+            :if={@destination.action in [:youtube, :youtube_video] && is_nil(@youtube_snapshot)}
+            role="status"
+            class="calendar-warning"
+          >
+            Local YouTube state is unavailable or this account was removed. <.link
+              patch="/connections/youtube"
+              class="workspace-action-link"
+            >Check YouTube connections</.link>.
+          </p>
 
           <GitHubComponents.connections
             :if={@connections && @connection_view == :github}

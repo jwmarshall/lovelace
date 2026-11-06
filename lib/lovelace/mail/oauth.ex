@@ -30,12 +30,21 @@ defmodule Lovelace.Mail.OAuth do
         generation \\ nil,
         origin \\ :connections
       ) do
-    if capability in [:gmail, :calendar] and origin in [:connections, :onboarding] and
-         (capability == :gmail or
-            (is_binary(expected) and expected != "" and is_binary(generation) and generation != "")) do
-      with {:ok, snapshot} <- connection_snapshot(expected) do
+    with {:ok, state, verifier, _capabilities} <-
+           begin_attempt(workspace, session, expected, capability, generation, origin) do
+      {:ok, state, verifier}
+    end
+  end
+
+  defp begin_attempt(workspace, session, expected, capability, generation, origin) do
+    if capability in [:gmail, :calendar, :youtube] and origin in [:connections, :onboarding] and
+         not (capability == :youtube and origin == :onboarding) and
+         valid_optional_binding?(capability, expected, generation) do
+      with {:ok, snapshot} <- connection_snapshot(expected),
+           {:ok, capabilities} <- requested_capabilities(expected, capability, generation) do
         call(
-          {:begin, workspace, digest(session), expected, capability, generation, origin, snapshot}
+          {:begin, workspace, digest(session), expected, capability, generation, origin, snapshot,
+           capabilities}
         )
       end
     else
@@ -43,14 +52,20 @@ defmodule Lovelace.Mail.OAuth do
     end
   end
 
+  defp valid_optional_binding?(:gmail, _, _), do: true
+
+  defp valid_optional_binding?(_, expected, generation),
+    do: is_binary(expected) and expected != "" and is_binary(generation) and generation != ""
+
   def authorization_url(workspace, session, expected, capability, generation, origin) do
-    with {:ok, state, verifier} <-
-           begin(workspace, session, expected, capability, generation, origin) do
+    with {:ok, state, verifier, capabilities} <-
+           begin_attempt(workspace, session, expected, capability, generation, origin) do
       Lovelace.Google.Access.provider().authorization_url(%{
         state: state,
         verifier: verifier,
         redirect_uri: callback_url(),
-        capability: capability
+        capability: capability,
+        capabilities: capabilities
       })
     end
   end
@@ -133,7 +148,8 @@ defmodule Lovelace.Mail.OAuth do
   end
 
   def handle_call(
-        {:begin, workspace, session, expected, capability, generation, origin, snapshot},
+        {:begin, workspace, session, expected, capability, generation, origin, snapshot,
+         capabilities},
         _,
         attempts
       ) do
@@ -151,6 +167,7 @@ defmodule Lovelace.Mail.OAuth do
         session_digest: session,
         expected_account_id: expected,
         capability: capability,
+        requested_capabilities: capabilities,
         expected_generation: generation,
         origin: origin,
         verifier: %Secret{value: verifier},
@@ -160,7 +177,7 @@ defmodule Lovelace.Mail.OAuth do
         expires: now() + @ttl
       }
 
-      {:reply, {:ok, state, verifier}, Map.put(attempts, digest(state), attempt)}
+      {:reply, {:ok, state, verifier, capabilities}, Map.put(attempts, digest(state), attempt)}
     end
   end
 
@@ -315,6 +332,27 @@ defmodule Lovelace.Mail.OAuth do
   defp random, do: Base.url_encode64(:crypto.strong_rand_bytes(32), padding: false)
   defp digest(value) when is_binary(value), do: :crypto.hash(:sha256, value)
   defp digest(_), do: :crypto.hash(:sha256, "invalid")
+
+  defp requested_capabilities(_, :gmail, _), do: {:ok, []}
+
+  defp requested_capabilities(id, capability, generation) do
+    case Lovelace.Mail.get_account(id, actor: @owner) do
+      {:ok, %{generation: ^generation, status: status} = account} when status != :disconnected ->
+        capabilities =
+          [:calendar, :youtube]
+          |> Enum.filter(fn optional ->
+            optional == capability or Map.get(account, enabled_attribute(optional)) == true
+          end)
+
+        {:ok, capabilities}
+
+      _ ->
+        {:error, :invalid_request}
+    end
+  end
+
+  defp enabled_attribute(:calendar), do: :calendar_enabled
+  defp enabled_attribute(:youtube), do: :youtube_enabled
 
   defp connection_snapshot(expected) when expected in [nil, ""] do
     case Account

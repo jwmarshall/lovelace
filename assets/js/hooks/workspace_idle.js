@@ -9,6 +9,8 @@ export default {
     this.window = this.document.defaultView
     this.lastActivity = this.window.Date.now()
     this.idle = false
+    this.playerActive = false
+    this.wasHidden = !!this.document.hidden
 
     this.onActivity = event => {
       // A throttled timer may not have run yet after tab/system sleep.
@@ -23,8 +25,25 @@ export default {
       this.schedule()
     }
     this.onVisibility = () => {
-      this.expireIfNeeded()
+      if (this.document.hidden && this.playerActive) {
+        this.playerActive = false
+        this.lastActivity = this.window.Date.now()
+      }
+      this.expireIfNeeded(this.wasHidden)
+      this.wasHidden = !!this.document.hidden
       this.schedule()
+    }
+    this.onPlayerFocus = () => {
+      const focused = this.playerFocused()
+      if (focused || this.playerActive) {
+        this.playerActive = focused
+        this.lastActivity = this.window.Date.now()
+        this.schedule()
+      }
+    }
+    this.onWindowBlur = () => {
+      this.window.clearTimeout(this.focusTimer)
+      this.focusTimer = this.window.setTimeout(this.onPlayerFocus, 0)
     }
     this.onModalClosed = () => {
       this.lastActivity = this.window.Date.now()
@@ -38,6 +57,8 @@ export default {
       this.document.addEventListener(event, this.onActivity, {capture: true, passive: true})
     }
     this.document.addEventListener("visibilitychange", this.onVisibility)
+    this.document.addEventListener("focusin", this.onPlayerFocus)
+    this.window.addEventListener("blur", this.onWindowBlur)
     this.schedule()
   },
 
@@ -55,8 +76,20 @@ export default {
     return !!this.el.querySelector("dialog[data-modal]")
   },
 
-  expireIfNeeded() {
+  playerFocused() {
+    return !this.document.hidden &&
+      !!this.document.activeElement?.matches?.("[data-youtube-player-host] iframe")
+  },
+
+  expireIfNeeded(returningFromHidden = false) {
     if (this.modalOpen()) return
+    // Cross-origin player input cannot reach this document. Visible player
+    // focus suspends scenery idle; returning from a hidden tab still expires.
+    if (!returningFromHidden && this.playerFocused()) {
+      this.playerActive = true
+      this.lastActivity = this.window.Date.now()
+      return
+    }
     if (!this.idle && this.window.Date.now() - this.lastActivity >= this.duration()) {
       this.idle = true
       // This command sets aria-pressed=false AND resets the independent brand.
@@ -69,7 +102,8 @@ export default {
   schedule() {
     this.window.clearTimeout(this.timer)
     if (this.idle || this.modalOpen()) return
-    const remaining = this.duration() - (this.window.Date.now() - this.lastActivity)
+    const remaining = this.playerFocused() ? this.duration() :
+      this.duration() - (this.window.Date.now() - this.lastActivity)
     this.timer = this.window.setTimeout(() => {
       this.expireIfNeeded()
       this.schedule()
@@ -84,10 +118,13 @@ export default {
 
   destroyed() {
     this.window.clearTimeout(this.timer)
+    this.window.clearTimeout(this.focusTimer)
     for (const event of activityEvents) {
       this.document.removeEventListener(event, this.onActivity, true)
     }
     this.document.removeEventListener("visibilitychange", this.onVisibility)
     this.document.removeEventListener("lovelace:modal-closed", this.onModalClosed)
+    this.document.removeEventListener("focusin", this.onPlayerFocus)
+    this.window.removeEventListener("blur", this.onWindowBlur)
   },
 }

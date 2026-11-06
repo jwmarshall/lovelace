@@ -80,6 +80,42 @@ defmodule Lovelace.UIFixture do
      }}
   end
 
+  def subscriptions("synthetic-access", nil) do
+    {:ok,
+     %{
+       channels: [
+         %{"id" => "UCaaaaaaaaaaaaaaaaaaaaaa", "title" => "Synthetic architecture"},
+         %{"id" => "UCbbbbbbbbbbbbbbbbbbbbbb", "title" => "Synthetic music"}
+       ],
+       next_page: nil
+     }}
+  end
+
+  def uploads_playlists("synthetic-access", ids) do
+    {:ok, Map.new(ids, &{&1, "UU" <> String.slice(&1, 2..-1//1)})}
+  end
+
+  def uploads("synthetic-access", "UUaaaaaaaaaaaaaaaaaaaaaa") do
+    {:ok,
+     %{
+       videos: [
+         %{
+           "id" => "aaaaaaaaaaa",
+           "title" => "Synthetic concrete & light",
+           "channel_id" => "UCaaaaaaaaaaaaaaaaaaaaaa",
+           "published_at" => "2026-11-05T12:00:00Z"
+         },
+         %{
+           "id" => "bbbbbbbbbbb",
+           "title" => "Synthetic quiet spaces",
+           "channel_id" => "UCaaaaaaaaaaaaaaaaaaaaaa",
+           "published_at" => "2026-11-04T12:00:00Z"
+         }
+       ],
+       truncated: false
+     }}
+  end
+
   # Deliberately synthetic geometry, not generated/private artwork. Distinct
   # palettes and silhouettes make gallery selection visible in screenshots.
   def scene_image(number) do
@@ -216,6 +252,7 @@ try do
   Application.put_env(:lovelace, :gmail_provider, Lovelace.UIFixture)
   Application.put_env(:lovelace, :gmail_vault, Lovelace.UIFixture)
   Application.put_env(:lovelace, :calendar_provider, Lovelace.UIFixture)
+  Application.put_env(:lovelace, :youtube_provider, Lovelace.UIFixture)
   {:ok, _} = Lovelace.TestSupport.GeminiVault.start_link([])
   Application.put_env(:lovelace, :gemini_vault, Lovelace.TestSupport.GeminiVault)
   {:ok, _} = Lovelace.TestSupport.OnboardingKeychain.start_link([])
@@ -261,24 +298,26 @@ try do
 
   # First exercise a genuinely empty installation, using only bundled public
   # artwork and a synthetic owner. No generated catalog or provider call exists.
-  {_output, default_status} =
-    System.cmd(
-      "node",
-      [
-        "test/browser/ui_contract.mjs",
-        browser,
-        root,
-        "http://localhost:#{port}",
-        "",
-        "",
-        "",
-        "bundled-default"
-      ],
-      into: IO.stream(:stdio, :line),
-      env: [{"LOVELACE_STAGE_ENABLED", "false"}]
-    )
+  unless System.get_env("LOVELACE_UI_HOLD") == "true" do
+    {_output, default_status} =
+      System.cmd(
+        "node",
+        [
+          "test/browser/ui_contract.mjs",
+          browser,
+          root,
+          "http://localhost:#{port}",
+          "",
+          "",
+          "",
+          "bundled-default"
+        ],
+        into: IO.stream(:stdio, :line),
+        env: [{"LOVELACE_STAGE_ENABLED", "false"}]
+      )
 
-  if default_status != 0, do: Mix.raise("Bundled default scenery browser regressions failed")
+    if default_status != 0, do: Mix.raise("Bundled default scenery browser regressions failed")
+  end
 
   # The full gallery requires a configured integration. Test builds reject the
   # production Gemini connector, so this synthetic key cannot reach Google.
@@ -336,7 +375,8 @@ try do
         subject: "synthetic-browser-account",
         email: "browser@example.test",
         generation: Ecto.UUID.generate(),
-        calendar_enabled: true
+        calendar_enabled: true,
+        youtube_enabled: true
       },
       actor: owner
     )
@@ -393,6 +433,25 @@ try do
 
   {:ok, _} = Lovelace.Calendar.poll(account.id, account.generation, revision, actor: owner)
 
+  {:ok, catalog} = Lovelace.YouTube.prepare(account.id, actor: owner)
+  {:ok, _} = Lovelace.YouTube.poll(account.id, account.generation, catalog.revision, actor: owner)
+
+  {:ok, selection} =
+    Lovelace.YouTube.select_channels(
+      account.id,
+      ["UCaaaaaaaaaaaaaaaaaaaaaa"],
+      catalog.generation,
+      catalog.revision,
+      actor: owner
+    )
+
+  {:ok, _} =
+    Lovelace.YouTube.poll(account.id, account.generation, selection.revision, actor: owner)
+
+  # Exercise browser-admitted refreshes through the actual worker using only
+  # the synthetic provider above; seeded obsolete jobs fail their revision fence.
+  :ok = Oban.start_queue(queue: :youtube, limit: 1)
+
   # Exercise real Connections density with five independent synthetic accounts.
   for number <- 3..5 do
     Lovelace.Mail.save_connection!(
@@ -436,6 +495,15 @@ try do
 
   # Bounded synthetic latency lets Chrome observe the durable discovery claim.
   Lovelace.TestGitHub.configure(installation_response: {:delay, 5_000})
+
+  if System.get_env("LOVELACE_UI_HOLD") == "true" do
+    IO.puts("SYNTHETIC_UI_READY http://localhost:#{port}/accounts/#{account.id}/youtube")
+    IO.puts("Synthetic owner password: synthetic browser owner password")
+
+    receive do
+      :stop_ui_fixture -> :ok
+    end
+  end
 
   {_output, status} =
     System.cmd(

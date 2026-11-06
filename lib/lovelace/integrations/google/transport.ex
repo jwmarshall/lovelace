@@ -100,10 +100,11 @@ defmodule Lovelace.Integrations.Google.Transport do
     [base | _] = String.split(path, "?", parts: 2)
 
     byte_size(path) <= 24 * 1024 and not String.contains?(path, ["#", "\r", "\n", "\0"]) and
-      Regex.match?(
-        ~r"\A/calendar/v3/(?:users/me/calendarList|calendars/(?:[A-Za-z0-9._~-]|%[A-Fa-f0-9]{2})+/events)\z",
-        base
-      ) and not String.contains?(base, ["/../", "/./"])
+      (base in ["/youtube/v3/subscriptions", "/youtube/v3/channels", "/youtube/v3/playlistItems"] or
+         (Regex.match?(
+            ~r"\A/calendar/v3/(?:users/me/calendarList|calendars/(?:[A-Za-z0-9._~-]|%[A-Fa-f0-9]{2})+/events)\z",
+            base
+          ) and not String.contains?(base, ["/../", "/./"])))
   end
 
   defp allowed_target?(_, _, _), do: false

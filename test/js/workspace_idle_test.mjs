@@ -27,7 +27,7 @@ class FakeTarget {
   get listenerCount() { return [...this.listeners.values()].reduce((n, listeners) => n + listeners.size, 0) }
 }
 
-class FakeClock {
+class FakeClock extends FakeTarget {
   now = 0
   nextId = 0
   timers = new Map()
@@ -108,6 +108,35 @@ test("three-minute deadline resets both focal plane and brand without blurring c
   assert.deepEqual(commands, ["reset-command"])
   assert.deepEqual(brandEvents, ["lovelace:brand-reset"])
   assert.equal(document.activeElement, control)
+})
+
+test("visible cross-origin player focus suspends idle and Tab return restarts its deadline", t => {
+  const {clock, document, control, pane} = workspace(t)
+  document.activeElement = {matches: selector => selector === "[data-youtube-player-host] iframe"}
+  clock.emit("blur")
+  clock.advance(0)
+  clock.advance(600_000)
+  assert.equal(pane.getAttribute("aria-pressed"), "true")
+  document.activeElement = control
+  document.emit("focusin", {target: control})
+  clock.advance(179_999)
+  assert.equal(pane.getAttribute("aria-pressed"), "true")
+  clock.advance(1)
+  assert.equal(pane.getAttribute("aria-pressed"), "false")
+})
+
+test("hidden-tab elapsed time expires even when its player retained iframe focus", t => {
+  const {clock, document, pane} = workspace(t)
+  document.activeElement = {matches: selector => selector === "[data-youtube-player-host] iframe"}
+  clock.emit("blur")
+  clock.advance(0)
+  clock.advance(200_000)
+  document.hidden = true
+  document.emit("visibilitychange")
+  clock.advance(180_000, false)
+  document.hidden = false
+  document.emit("visibilitychange")
+  assert.equal(pane.getAttribute("aria-pressed"), "false")
 })
 
 test("each intentional action renews the activity timestamp", async t => {
@@ -270,6 +299,7 @@ test("destruction removes every listener and timer", t => {
   assert.ok(document.listenerCount > 0)
   hook.destroyed()
   assert.equal(document.listenerCount, 0)
+  assert.equal(clock.listenerCount, 0)
   assert.equal(clock.timers.size, 0)
   clock.advance(300_000)
   document.emit("keydown", {key: "a"})

@@ -11,7 +11,7 @@ defmodule Lovelace.Mail.OAuthExchange do
          :ok <- step(:account_binding, fn -> current_onboarding(attempt) end),
          {:ok, code} <- step(:code, fn -> required(params, "code", 4096) end),
          {:ok, tokens} <- exchange_tokens(attempt, code, session),
-         :ok <- step(:consent, fn -> capability_scopes(attempt.capability, tokens) end),
+         :ok <- step(:consent, fn -> requested_scopes(attempt, tokens) end),
          {:ok, identity} <-
            step(:identity, fn -> Access.provider().identity(tokens.access_token) end),
          :ok <-
@@ -23,7 +23,7 @@ defmodule Lovelace.Mail.OAuthExchange do
          :ok <- step(:account_binding, fn -> current_onboarding(attempt) end),
          {:ok, _} <-
            step(:connection, fn ->
-             commit(attempt, identity, refresh)
+             commit(attempt, identity, refresh, granted_capabilities(attempt, tokens))
            end) do
       {:ok, public(attempt)}
     else
@@ -53,14 +53,14 @@ defmodule Lovelace.Mail.OAuthExchange do
     end
   end
 
-  defp commit(attempt, identity, refresh) do
-    OAuth.commit(attempt.id, fn -> publish(attempt, identity, refresh) end)
+  defp commit(attempt, identity, refresh, grants) do
+    OAuth.commit(attempt.id, fn -> publish(attempt, identity, refresh, grants) end)
   end
 
-  defp publish(attempt, identity, refresh) do
+  defp publish(attempt, identity, refresh, grants) do
     with :ok <- same_account(attempt, identity.subject),
          :ok <- current_onboarding(attempt),
-         {:ok, account} <- accept(attempt, identity, refresh),
+         {:ok, account} <- accept(attempt, identity, refresh, grants),
          :ok <- continue_onboarding(attempt) do
       {:ok, account}
     end
@@ -76,7 +76,7 @@ defmodule Lovelace.Mail.OAuthExchange do
     case Mail.get_account(attempt.expected_account_id, actor: @owner) do
       {:ok, %{generation: generation, status: status}}
       when is_binary(attempt.expected_generation) and generation == attempt.expected_generation ->
-        if attempt.capability == :calendar and status == :disconnected,
+        if attempt.capability in [:calendar, :youtube] and status == :disconnected,
           do: {:error, :wrong_account},
           else: :ok
 
@@ -127,19 +127,38 @@ defmodule Lovelace.Mail.OAuthExchange do
     end
   end
 
-  defp capability_scopes(:gmail, _), do: :ok
+  # An optional opt-in requests every already-enabled optional capability too.
+  # Reject a partial grant before credentials or dependent snapshots can be replaced.
+  defp requested_scopes(attempt, tokens) do
+    if Enum.all?(attempt.requested_capabilities, &(capability_scopes(&1, tokens) == :ok)),
+      do: :ok,
+      else: {:error, :forbidden}
+  end
 
   defp capability_scopes(:calendar, tokens),
     do: if(Google.calendar_authorized?(tokens), do: :ok, else: {:error, :forbidden})
 
-  defp accept(attempt, identity, refresh) do
+  defp capability_scopes(:youtube, tokens),
+    do: if(Google.youtube_authorized?(tokens), do: :ok, else: {:error, :forbidden})
+
+  defp granted_capabilities(attempt, tokens) do
+    %{
+      calendar_enabled:
+        :calendar in attempt.requested_capabilities and Google.calendar_authorized?(tokens),
+      youtube_enabled:
+        :youtube in attempt.requested_capabilities and Google.youtube_authorized?(tokens)
+    }
+  end
+
+  defp accept(attempt, identity, refresh, grants) do
     Access.accept(
       attempt.workspace_id,
       identity,
       refresh,
       attempt.capability,
       attempt.expected_generation,
-      publication_fence(attempt, identity.subject)
+      publication_fence(attempt, identity.subject),
+      grants
     )
   end
 
@@ -165,7 +184,8 @@ defmodule Lovelace.Mail.OAuthExchange do
     end
   end
 
-  defp same_account(%{capability: :calendar} = attempt, subject) do
+  defp same_account(%{capability: capability} = attempt, subject)
+       when capability in [:calendar, :youtube] do
     case Mail.get_account(attempt.expected_account_id, actor: @owner) do
       {:ok, %{subject: ^subject, generation: generation, status: status}}
       when generation == attempt.expected_generation and status != :disconnected ->

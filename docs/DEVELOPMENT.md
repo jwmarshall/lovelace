@@ -227,12 +227,13 @@ checkout folder name are separate from application identifiers and were not chan
 ## Application boundaries and background ownership
 
 Ash domains/actions are inbound application APIs. Domain-owned provider contracts describe
-mail reads, Calendar pages, GitHub `installation_snapshot/2`, Google authorization and paid
-render submit/track/delete; concrete HTTP/native adapters implement those contracts. Keep
+mail reads, Calendar pages, YouTube subscription/uploads pages, GitHub `installation_snapshot/2`,
+Google authorization and paid render submit/track/delete; concrete HTTP/native adapters implement those contracts. Keep
 authorization, safe outcomes and workflow decisions in the application, not in adapters or
 LiveView callbacks. Do not add parallel Ecto contexts or generic workflow/task platforms.
 `Google.Access` owns shared Google credentials, serialization and grant/reset coordination;
-Calendar owns its catalog/day/selection health. GitHub `Coordination` owns exclusion across
+Calendar owns its catalog/day/selection health; YouTube owns its channel selection and feed.
+GitHub `Coordination` owns exclusion across
 `Credentials`, discovery/membership `Operations` and snapshot `Polling`; callers must not
 borrow private lock identities or persistence.
 
@@ -242,8 +243,8 @@ page flags are derived render projections, not independently mutable navigation 
 Meaningful URLs, reload/history/unlock returns and request-token fencing remain required.
 
 Application background work executes in protected Oban queues, each with concurrency one:
-`:gmail` reads/polls/disconnection, independent `:calendar` poll/sweep, `:github` snapshots,
-`:gemini` authorized generation/recovery, `:oauth` one-use exchanges and `:diagnostics` local
+`:gmail` reads/polls/disconnection, independent `:calendar` and `:youtube` poll/sweep,
+`:github` snapshots, `:gemini` authorized generation/recovery, `:oauth` one-use exchanges and `:diagnostics` local
 keychain checks. Authorized Ash admission atomically commits intent/job where durable.
 Arguments carry only opaque IDs and safe generations/revisions. Observe safe application
 outcomes correlated to job IDs; Oban completion alone is not provider success. Retain bounded
@@ -263,8 +264,9 @@ Narrow runtime exceptions (not namespace-wide exemptions):
   operation/lease, sanitize failures and cancel before returning. Native setup/unlock/migration
   must work before the protected Repo/Oban exists; that does not exempt background diagnostics.
 - Vault/session expiry timers enforce security. HomeGitHub local-age/auth status,
-  HomeConnectionDiagnostic and HomeMail operation timers only observe local state; they
-  never initiate provider polling. Expired observation is not cancelled durable cleanup.
+  HomeConnectionDiagnostic, HomeMail and HomeYouTube operation timers only observe local
+  state; they never initiate provider polling. HomeYouTube observes at most twenty
+  three-second intervals. Expired observation is not cancelled durable cleanup.
 - `Mail.ViewData` expiry timers carry opaque references only and erase idle private results
   after ten minutes. Eviction/view death cancels their timers; protected teardown clears the
   store on Lock. This bounded privacy lifetime is not a provider scheduler.
@@ -391,6 +393,60 @@ preparation, selection, reads and jobs; the browser supplies local midnight boun
 renders minimal cached event text without retaining events in socket assigns. Its independent
 `:calendar` minute sweep discovers due Calendar work without waiting for Gmail.
 Tests must inject fake Calendar providers, never real Google responses or private calendar data.
+
+## YouTube
+
+Optional read-only YouTube uses the existing Google identity and dedicated keychain credential,
+not another owner login. Enable **YouTube Data API v3** in the same Google Cloud project and
+add `https://www.googleapis.com/auth/youtube.readonly` to its consent configuration.
+In **Connections → YouTube**, choose the account and receiving workspace and explicitly
+authorize YouTube. Gmail-only connection does not request this scope; onboarding is unchanged.
+Previously enabled Calendar/YouTube capabilities require complete returned scope evidence
+when enabling the other. Denial or partial optional grants leave the existing grant untouched.
+A normal Gmail reconnect disables both optional capabilities; enable them explicitly again.
+Replacing Google client settings fences active account generations and clears optional
+state; unchanged settings preserve them. Global Google disconnect clears all three services.
+Workspace removal remains association-only. Grant replacement resets dependent caches and
+selections rather than carrying private state into a new generation.
+
+Choose up to ten subscriptions from a bounded catalog of the first one hundred, with honest
+truncation. Nothing is selected automatically. The account feed reads at most ten recent
+uploads per selected channel, deduplicated and ordered newest first, with a one-hundred-video
+aggregate cap. No recommendations, comments, search, writes, downloads or infinite scroll.
+`/accounts/:account_id/youtube` and `/accounts/:account_id/youtube/videos/:video_id`
+preserve destination through reload/unlock/history. Playback admission requires a video in
+the current selected, unexpired cached feed; account/generation/selection changes invalidate it.
+
+SQLCipher stores bounded channel/feed metadata with independent 24-hour expiry. Unlocked
+polling is every fifteen minutes; a five-minute provider rate-limit cooldown also applies
+to manual Refresh. There is no asleep/off execution guarantee. Protected `:youtube` Oban
+work uses ID-only account/generation/revision arguments and atomic intent/job admission.
+Queue waiting does not consume the execution lease. An atomic claim starts a 120-second
+lease, backed by a 120-second whole-worker timeout, including serializer waits. Publication
+rechecks the claim and identity. The minute sweep has its own 30-second whole-worker bound
+and recovers interrupted/expired claims. Ready/enabled/current-generation eligibility is
+filtered before its 100-row admission cap; ineligible rows cannot monopolize that page.
+Failures stay visible rather than reporting successful freshness. Shared account health
+publishes an independent `google:ACCOUNT_ID` invalidation. Polling and grant changes retain
+the existing Mail event; committed interactive-read failures notify dependent health only,
+without recursively refreshing Gmail. YouTube owns its independent subscription lifetime,
+so credential failure in either Gmail path removes an open player's admission.
+
+No remote thumbnails, scripts or imagery load in the parent page. A fresh **Load YouTube
+player** click creates only `https://www.youtube-nocookie.com/embed/VIDEO_ID`, with autoplay
+off. Navigation, reload, reconnect and unload never silently recreate it. This is an explicit
+exception to self-hosted browser content, not a tracking-free or ad-free promise. YouTube
+controls ads and related content; `rel=0` restricts related videos, not their existence.
+See [YouTube's parameter contract](https://developers.google.com/youtube/player_parameters#rel).
+Cross-origin player input cannot reach LOVELACE: Tab/Shift+Tab back to the adjacent Unload
+control. Visible focused playback suspends scenery idle; hidden-tab elapsed time still
+expires/unloads it. Escape controls LOVELACE scenery only outside the player.
+See [UI_CONTRACT.md](UI_CONTRACT.md).
+
+Tests and browser verification inject synthetic providers and intercept the embed locally.
+They must not fetch real subscription data or perform live consent/playback. Native keychain,
+Google consent and actual YouTube playback require attended verification with the owner's
+configured client; fixture success does not certify those external services.
 
 ## GitHub
 

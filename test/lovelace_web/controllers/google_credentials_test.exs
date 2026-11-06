@@ -5,6 +5,7 @@ defmodule LovelaceWeb.GoogleCredentialsTest do
 
   alias Lovelace.{Google, Onboarding, Owner}
   alias Lovelace.Integrations.Google.ClientCredentials
+  alias Lovelace.Mail.OAuth
   alias Lovelace.TestSupport.{OnboardingGoogleTransport, OnboardingKeychain}
   alias LovelaceWeb.Plugs.GoogleSetupCredentials
 
@@ -72,6 +73,78 @@ defmodule LovelaceWeb.GoogleCredentialsTest do
     assert after_save.step == before.step
     assert after_save.credentials_saved == before.credentials_saved
     assert after_save.workspace_id == nil
+  end
+
+  for {field, replacement} <- [
+        id: %{client_id: @id <> "-new", client_secret: @secret},
+        secret: %{client_id: @id, client_secret: @secret <> "-new"}
+      ] do
+    @replacement replacement
+    test "changed Desktop client #{field} fences both optional grants and pending consent without provider calls",
+         %{conn: conn} do
+      assert redirected_to(submit(conn, %{client_id: @id, client_secret: @secret}), 303) ==
+               "/connections/google?google=saved"
+
+      workspace = Lovelace.Workspaces.create_workspace!("Client replacement", @owner)
+
+      account =
+        Lovelace.Mail.save_connection!(
+          %{
+            subject: "synthetic-shared-subject",
+            email: "synthetic-shared@example.invalid",
+            generation: Ash.UUID.generate(),
+            calendar_enabled: true,
+            youtube_enabled: true
+          },
+          @owner
+        )
+
+      {:ok, state, _} =
+        OAuth.begin(
+          workspace.id,
+          get_session(conn, :owner_session_token),
+          account.id,
+          :youtube,
+          account.generation
+        )
+
+      saved = submit(conn, @replacement)
+      assert redirected_to(saved, 303) == "/connections/google?google=saved"
+      current = Lovelace.Mail.get_account!(account.id, @owner)
+      assert current.generation != account.generation
+      assert current.status == :reconnect
+      refute current.calendar_enabled
+      refute current.youtube_enabled
+
+      assert {:error, :invalid_state} =
+               OAuth.cancel(state, get_session(conn, :owner_session_token))
+
+      assert OnboardingKeychain.calls() == []
+    end
+  end
+
+  test "saving unchanged client settings does not invalidate an existing grant", %{conn: conn} do
+    submit(conn, %{client_id: @id, client_secret: @secret})
+
+    account =
+      Lovelace.Mail.save_connection!(
+        %{
+          subject: "synthetic-unchanged-subject",
+          email: "synthetic-unchanged@example.invalid",
+          generation: Ash.UUID.generate(),
+          calendar_enabled: true,
+          youtube_enabled: true
+        },
+        @owner
+      )
+
+    saved = submit(conn, %{client_id: @id, client_secret: @secret})
+    assert redirected_to(saved, 303) == "/connections/google?google=saved"
+    current = Lovelace.Mail.get_account!(account.id, @owner)
+    assert current.generation == account.generation
+    assert current.calendar_enabled
+    assert current.youtube_enabled
+    assert OnboardingKeychain.calls() == []
   end
 
   test "anonymous and revoked owners are refused before parsing credentials", %{conn: conn} do

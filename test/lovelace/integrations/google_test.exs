@@ -101,6 +101,76 @@ defmodule Lovelace.Integrations.GoogleTest do
              Google.authorization_url(Map.put(params, :capability, :unknown))
   end
 
+  test "YouTube requests only readonly scope and composes previously explicit optional grants" do
+    params = %{state: "state-state-state", verifier: @verifier, redirect_uri: @redirect}
+    youtube = "https://www.googleapis.com/auth/youtube.readonly"
+
+    calendar = [
+      "https://www.googleapis.com/auth/calendar.calendarlist.readonly",
+      "https://www.googleapis.com/auth/calendar.events.readonly"
+    ]
+
+    base = ["openid", "email", "https://www.googleapis.com/auth/gmail.readonly"]
+
+    assert {:ok, url} = Google.authorization_url(Map.put(params, :capability, :youtube))
+    assert String.split(URI.decode_query(URI.parse(url).query)["scope"]) == base ++ [youtube]
+
+    for capability <- [:calendar, :youtube] do
+      assert {:ok, url} =
+               Google.authorization_url(
+                 Map.merge(params, %{capability: capability, capabilities: [:calendar, :youtube]})
+               )
+
+      assert String.split(URI.decode_query(URI.parse(url).query)["scope"]) ==
+               base ++ calendar ++ [youtube]
+    end
+
+    for invalid <- [
+          %{capability: :gmail, capabilities: [:youtube]},
+          %{capability: :youtube, capabilities: [:calendar]},
+          %{capability: :youtube, capabilities: [:youtube, :unknown]},
+          %{capability: :youtube, capabilities: "youtube"}
+        ] do
+      assert {:error, :invalid_request} = Google.authorization_url(Map.merge(params, invalid))
+    end
+  end
+
+  test "YouTube scope evidence survives tokens; broader YouTube grants are rejected" do
+    gmail = "https://www.googleapis.com/auth/gmail.readonly"
+    youtube = "https://www.googleapis.com/auth/youtube.readonly"
+    scope = "openid email " <> gmail <> " " <> youtube
+
+    configure(fn _ ->
+      json(%{access_token: @access, expires_in: 3600, token_type: "Bearer", scope: scope})
+    end)
+
+    assert {:ok, tokens} = Google.exchange_code("fake-code", @verifier, @redirect)
+    assert Google.youtube_authorized?(tokens)
+    assert {:ok, refreshed} = Google.refresh(@refresh)
+    assert refreshed.scopes == String.split(scope)
+    refute Google.youtube_authorized?(%{})
+    refute Google.youtube_authorized?(%{scopes: [gmail]})
+    refute Google.youtube_authorized?(%{scopes: [youtube]})
+    refute Google.calendar_authorized?(tokens)
+
+    for extra <- [
+          "https://www.googleapis.com/auth/youtube",
+          "https://www.googleapis.com/auth/youtube.force-ssl",
+          "https://www.googleapis.com/auth/youtube.upload"
+        ] do
+      configure(fn _ ->
+        json(%{
+          access_token: @access,
+          expires_in: 3600,
+          token_type: "Bearer",
+          scope: scope <> " " <> extra
+        })
+      end)
+
+      assert {:error, :invalid_response} = Google.refresh(@refresh)
+    end
+  end
+
   test "token scope evidence survives exchange and refresh without accepting wider Calendar grants" do
     scope =
       "openid email https://www.googleapis.com/auth/gmail.readonly " <>

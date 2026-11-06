@@ -167,7 +167,8 @@ defmodule LovelaceWeb.Layouts do
   end
 
   defp reset_workspace do
-    JS.set_attribute({"aria-pressed", "false"}, to: "#workspace-pane")
+    JS.dispatch("lovelace:player-stop", to: "#workspace")
+    |> JS.set_attribute({"aria-pressed", "false"}, to: "#workspace-pane")
     |> JS.dispatch("lovelace:brand-reset", to: "#workspace-brand")
   end
 

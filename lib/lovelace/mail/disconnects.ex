@@ -76,6 +76,7 @@ defmodule Lovelace.Mail.Disconnects do
       generation: generation,
       status: :disconnected,
       calendar_enabled: false,
+      youtube_enabled: false,
       inbox_unread_count: nil,
       inbox_unread_recent_count: nil,
       inbox_unread_at: nil,

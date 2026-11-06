@@ -33,6 +33,8 @@ const errors = []
 const cspViolations = []
 const external = []
 const attachmentRequests = []
+const youtubeRequests = []
+let allowYouTubeFixture = false
 const deadline = setTimeout(() => {
   console.error("UI browser suite exceeded its 120-second deadline")
   chrome.kill("SIGKILL")
@@ -181,6 +183,91 @@ async function verifyEmptyInstallation() {
   assert.deepEqual(errors, [])
   assert.deepEqual(external, [])
   console.log('PASS bundled default without generated scenes: static/no-JS/live, image decoding, empty gallery and stable reload/navigation/wake')
+}
+
+async function verifyYouTube() {
+  await media([{name: 'prefers-reduced-motion', value: 'reduce'}])
+  await send('Page.navigate', {url: origin + '/connections/youtube'})
+  const consentReady = `!!document.querySelector('#youtube-authorize-${unattachedId} button:not([disabled])') &&
+    !!document.querySelector('#youtube-authorize-${unattachedId} select:not([disabled])')`
+  await waitFor(consentReady, 'direct YouTube connection observes stored Google client settings')
+  assert.equal(await evaluate("!!document.querySelector('#youtube-connections > .calendar-warning')"), false)
+  await click('#workspace-pane')
+  await focused()
+  await screenshot('youtube-connections-ready')
+  await click('#connections-gmail')
+  await waitFor("!!document.querySelector('#gmail-connections-heading')", 'Gmail connection navigation')
+  await click('#connections-youtube')
+  await waitFor(consentReady, 'YouTube navigation continues the shared Google diagnostic')
+  assert.equal(await evaluate("!!document.querySelector('#youtube-connections > .calendar-warning')"), false)
+  console.log('PASS YouTube consent enables after stored-settings diagnostics on direct entry and provider navigation')
+  await click(`#youtube-nav-${accountId}`)
+  await waitFor("!!document.querySelector('#youtube-videos a')", 'account YouTube uploads')
+  assert.equal(await evaluate("!!document.querySelector('#youtube-feed iframe, #youtube-feed img')"), false)
+  assert.equal(youtubeRequests.length, 0, 'opening the feed never contacts YouTube')
+  const priorRead = await evaluate("document.querySelector('#youtube-feed-status time').dateTime")
+  await click('#youtube-refresh')
+  await waitFor(`!!document.querySelector('#youtube-feed-status time') && document.querySelector('#youtube-feed-status time').dateTime !== ${JSON.stringify(priorRead)} && !document.querySelector('#youtube-feed-status').textContent.includes('Updating')`, 'browser Refresh publishes a new observation through Oban')
+  await screenshot('youtube-feed-desktop')
+  await click('#youtube-videos a')
+  await waitFor("!!document.querySelector('#youtube-player-load')", 'selected feed video deep link')
+  const watchPath = await evaluate('location.pathname')
+  assert.equal(await evaluate("!!document.querySelector('iframe')"), false, 'watch route is click-to-load')
+  allowYouTubeFixture = true
+  await click('#youtube-player-load')
+  await waitFor("!!document.querySelector('#youtube-player iframe')", 'fresh click creates player')
+  await waitFor("document.querySelector('#youtube-player iframe')?.contentWindow != null", 'iframe browsing context')
+  assert.deepEqual(await evaluate(`(() => {
+    const frame = document.querySelector('#youtube-player iframe');
+    return {src:frame.getAttribute('src'), referrer:frame.referrerPolicy};
+  })()`), {src:'https://www.youtube-nocookie.com/embed/aaaaaaaaaaa?autoplay=0&rel=0', referrer:'strict-origin-when-cross-origin'})
+  await screenshot('youtube-click-loaded-player')
+  // Browser-owned input inside a cross-origin iframe never bubbles to LOVELACE.
+  // Keep scenery focused while it owns input, then verify native Tab exits safely.
+  await evaluate("document.querySelector('#workspace').dataset.idleMinutes = '0.02'")
+  await click('#youtube-player iframe')
+  await waitFor("document.activeElement.tagName === 'IFRAME'", 'cross-origin player focus')
+  await key('Escape')
+  await new Promise(resolve => setTimeout(resolve, 1400))
+  assert.equal(await evaluate("document.querySelector('#workspace-pane').getAttribute('aria-pressed')"), 'true', 'visible player focus suspends visual idle')
+  assert.equal(await evaluate("!!document.querySelector('iframe')"), true, 'player keeps its own Escape handling')
+  await key('Tab')
+  await waitFor("document.activeElement.matches('[data-youtube-unload]')", 'Tab exits player to Unload')
+  await landscape()
+  assert.equal(await evaluate("!!document.querySelector('iframe')"), false, 'ordinary idle resumes after leaving the player')
+  await evaluate("document.querySelector('#workspace').dataset.idleMinutes = '3'")
+  await key('a', 'a')
+  await focused()
+  await click('#youtube-player-load')
+  await waitFor("!!document.querySelector('#youtube-player iframe')", 'player before parent Escape')
+  await key('Escape')
+  await landscape()
+  assert.equal(await evaluate("!!document.querySelector('iframe')"), false, 'Escape unloads before scenery')
+  await key('a', 'a')
+  await focused()
+  await click('#youtube-player-load')
+  await waitFor("!!document.querySelector('#youtube-player iframe')", 'explicit reload player')
+  await send('Page.reload')
+  await waitFor("!!document.querySelector('#youtube-player-load') && window.liveSocket?.getSocket().isConnected()", 'watch deep link reload')
+  await click('#workspace-pane')
+  await focused()
+  assert.equal(await evaluate('location.pathname'), watchPath)
+  assert.equal(await evaluate("!!document.querySelector('iframe')"), false, 'reload never reuses player consent')
+  await click('#youtube-watch a')
+  await waitFor("!!document.querySelector('#youtube-videos a')", 'back to uploads')
+  await evaluate('history.back()')
+  await waitFor("!!document.querySelector('#youtube-player-load')", 'browser Back restores watch destination')
+  assert.equal(await evaluate("!!document.querySelector('iframe')"), false, 'Back needs a fresh click')
+  if (await evaluate("document.querySelector('#workspace-pane').getAttribute('aria-pressed') !== 'true'")) await key('a', 'a')
+  await focused()
+  await click('#youtube-player-load')
+  await waitFor("!!document.querySelector('#youtube-player iframe')", 'player before account leave')
+  await click('#home-link')
+  await home()
+  assert.equal(await evaluate("!!document.querySelector('iframe')"), false, 'leaving account removes player')
+  allowYouTubeFixture = false
+  assert.ok(youtubeRequests.length >= 1, 'synthetic official embed was intercepted, never fetched')
+  await media([])
 }
 
 async function verifyGitHubDiscovery() {
@@ -901,6 +988,12 @@ try {
       if (/\/attachments\//.test(request.url)) attachmentRequests.push(request.url)
       if (failStageImages && request.url.startsWith(`${origin}/stage/background/`)) {
         send("Fetch.failRequest", {requestId, errorReason: "Failed"}, message.sessionId).catch(() => {})
+      } else if (allowYouTubeFixture && /^https:\/\/www\.youtube-nocookie\.com\/embed\/[A-Za-z0-9_-]{11}\?autoplay=0&rel=0$/.test(request.url)) {
+        youtubeRequests.push(request.url)
+        send("Fetch.fulfillRequest", {requestId, responseCode: 200,
+          responseHeaders: [{name: "Content-Type", value: "text/html"}],
+          body: Buffer.from("<!doctype html><title>Synthetic official-player boundary</title><p>Locally intercepted player. No YouTube contact.</p>").toString("base64")
+        }, message.sessionId).catch(() => {})
       } else if (request.url.startsWith(`${origin}/`) || request.url.startsWith("data:")) {
         send("Fetch.continueRequest", {requestId}, message.sessionId).catch(() => {})
       } else {
@@ -963,6 +1056,7 @@ try {
   await home()
   await verifyNavigationHistory()
   await home()
+  await verifyYouTube()
   assert.equal(await evaluate("document.querySelectorAll('#home-accounts > li').length"), 5, "one Home card per connection, not per membership")
   for (const [id, count, recent] of [[accountId, "7", "3"], [unattachedId, "0", "0"]]) {
     assert.equal(await evaluate(`document.querySelectorAll('#home-account-${id}').length`), 1)

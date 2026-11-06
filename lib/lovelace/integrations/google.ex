@@ -21,7 +21,7 @@ defmodule Lovelace.Integrations.Google do
   Exchange/refresh return token maps (expiry is seconds); an omitted refresh token
   is absent, not nil. Preserve a vault token only after matching the same subject.
   A returned scope list must include Gmail readonly and no unrelated scopes.
-  Calendar is explicit opt-in; returned `:scopes` supplies consent evidence.
+  Calendar and YouTube are explicit opt-ins; returned `:scopes` supplies consent evidence.
   Lists return at most 20 metadata summaries and an optional next-page token.
   Full threads are capped at 100 messages; MIME is capped at depth 10, 100 parts,
   256 KiB decoded text and 2 MiB encoded text per message. Attachment metadata is
@@ -41,6 +41,7 @@ defmodule Lovelace.Integrations.Google do
     "https://www.googleapis.com/auth/calendar.calendarlist.readonly",
     "https://www.googleapis.com/auth/calendar.events.readonly"
   ]
+  @youtube_scope "https://www.googleapis.com/auth/youtube.readonly"
   @callback_path "/oauth/google/callback"
   @max_body 10 * 1024 * 1024
   @max_attachment 5 * 1024 * 1024
@@ -70,7 +71,11 @@ defmodule Lovelace.Integrations.Google do
            {:ok, %{client_id: client_id}} <- credentials(),
            %{state: state, verifier: verifier, redirect_uri: redirect} <- params,
            true <- valid_state?(state) and valid_verifier?(verifier),
-           {:ok, scope} <- authorization_scope(Map.get(params, :capability, :gmail)),
+           {:ok, scope} <-
+             authorization_scope(
+               Map.get(params, :capability, :gmail),
+               Map.get(params, :capabilities)
+             ),
            :ok <- validate_redirect(redirect, config.redirect_uri) do
         query =
           URI.encode_query(%{
@@ -93,9 +98,24 @@ defmodule Lovelace.Integrations.Google do
     end)
   end
 
-  defp authorization_scope(:gmail), do: {:ok, @scope}
-  defp authorization_scope(:calendar), do: {:ok, Enum.join([@scope | @calendar_scopes], " ")}
-  defp authorization_scope(_), do: {:error, :invalid_request}
+  defp authorization_scope(:gmail, capabilities) when capabilities in [nil, []], do: {:ok, @scope}
+
+  defp authorization_scope(capability, capabilities) when capability in [:calendar, :youtube] do
+    capabilities = if is_nil(capabilities), do: [capability], else: capabilities
+
+    if is_list(capabilities) and length(capabilities) <= 2 and capability in capabilities and
+         Enum.all?(capabilities, &(&1 in [:calendar, :youtube])) do
+      calendar = if :calendar in capabilities, do: @calendar_scopes, else: []
+      youtube = if :youtube in capabilities, do: [@youtube_scope], else: []
+      scopes = [@scope] ++ calendar ++ youtube
+
+      {:ok, Enum.join(scopes, " ")}
+    else
+      {:error, :invalid_request}
+    end
+  end
+
+  defp authorization_scope(_, _), do: {:error, :invalid_request}
 
   @doc false
   def calendar_authorized?(%{scopes: scopes}) when is_list(scopes),
@@ -106,6 +126,12 @@ defmodule Lovelace.Integrations.Google do
       )
 
   def calendar_authorized?(_), do: false
+
+  @doc false
+  def youtube_authorized?(%{scopes: scopes}) when is_list(scopes),
+    do: "https://www.googleapis.com/auth/gmail.readonly" in scopes and @youtube_scope in scopes
+
+  def youtube_authorized?(_), do: false
 
   @impl OAuthProvider
   @spec exchange_code(binary(), binary(), binary()) ::
@@ -537,7 +563,7 @@ defmodule Lovelace.Integrations.Google do
   defp scope_allowed?(scope) when is_binary(scope) do
     allowed =
       String.split(@scope) ++
-        @calendar_scopes ++ ["https://www.googleapis.com/auth/userinfo.email"]
+        @calendar_scopes ++ [@youtube_scope, "https://www.googleapis.com/auth/userinfo.email"]
 
     scopes = String.split(scope)
 

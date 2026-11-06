@@ -9,7 +9,7 @@ defmodule LovelaceWeb.ConnectionComponents do
         <.icon name="hero-key" class="size-6" />
         <span class="connection-provider-copy">
           <span class="connection-provider-name">Google</span>
-          <span class="mail-muted">Shared Gmail &amp; Calendar client settings</span>
+          <span class="mail-muted">Shared Gmail, Calendar &amp; YouTube client settings</span>
         </span>
         <.icon name="hero-arrow-up-right" class="size-5" />
       </.link>
@@ -26,6 +26,14 @@ defmodule LovelaceWeb.ConnectionComponents do
         <span class="connection-provider-copy">
           <span class="connection-provider-name">Calendar</span>
           <span class="mail-muted">Read-only agendas</span>
+        </span>
+        <.icon name="hero-arrow-up-right" class="size-5" />
+      </.link>
+      <.link id="open-connection-youtube" patch="/connections/youtube" class="connection-provider">
+        <.icon name="hero-play-circle" class="size-6" />
+        <span class="connection-provider-copy">
+          <span class="connection-provider-name">YouTube</span>
+          <span class="mail-muted">Selected subscriptions · read-only</span>
         </span>
         <.icon name="hero-arrow-up-right" class="size-5" />
       </.link>

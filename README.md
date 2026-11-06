@@ -3,10 +3,13 @@
 A quiet place to orient your day.
 
 LOVELACE is a personal homepage that runs locally on your Mac. Read Gmail,
-optionally see today's Google Calendar agendas, and follow open GitHub pull requests.
+optionally see today's Google Calendar agendas, follow GitHub activity, and watch selected
+YouTube subscriptions in a bounded chronological feed.
 Workspaces group separate accounts and GitHub personal/organization installations by area of life.
 
-- Read-only: no sending mail, changing mailbox state, editing calendar events, or modifying GitHub repositories.
+- Read-only: no sending mail, changing mailbox state, editing events, modifying repositories,
+  or changing YouTube subscriptions/playlists. The click-loaded official player can show
+  YouTube-controlled ads and related content.
 - One local owner; its password unlocks a dedicated macOS keychain and SQLCipher-encrypted SQLite database.
 - Local-only: keep it on loopback, not a public server or tunnel.
 - Startup is locked. Explicit Lock stops protected background work; visual idle/Escape does not.
@@ -33,6 +36,9 @@ For a review without touching existing data, use the
 [isolated fresh-onboarding instructions](docs/DEVELOPMENT.md#fresh-onboarding-without-resetting-existing-data).
 GitHub uses App sign-in and selected personal/organization installations; see
 [GitHub setup](docs/DEVELOPMENT.md#github).
+Optional [YouTube setup](docs/DEVELOPMENT.md#youtube) reuses a Google connection with
+separate consent. Enable YouTube Data API v3, authorize in **Connections → YouTube**, then
+choose subscribed channels. No remote thumbnails; the player loads only after an explicit playback click.
 
 ## Development
 
@@ -45,4 +51,4 @@ bin/lovelace mix test.ui     # browser checks; requires Chrome/Chromium
 ```
 
 [Development guide](docs/DEVELOPMENT.md) · [Gmail](docs/GMAIL.md) ·
-[Calendar](docs/CALENDAR.md) · [UI and accessibility](docs/UI_CONTRACT.md)
+[Calendar](docs/CALENDAR.md) · [YouTube](docs/DEVELOPMENT.md#youtube) · [UI and accessibility](docs/UI_CONTRACT.md)

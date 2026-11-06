@@ -40,6 +40,9 @@ defmodule LovelaceWeb.Plugs.GoogleOAuthCallback do
   defp destination({:ok, %{capability: :calendar}}),
     do: "/connections/calendar?calendar=connected"
 
+  defp destination({:ok, %{capability: :youtube}}),
+    do: "/connections/youtube?youtube=connected"
+
   defp destination({:ok, %{capability: :gmail, workspace_id: workspace}}),
     do: "/workspaces/" <> workspace <> "?gmail=connected"
 
@@ -48,6 +51,9 @@ defmodule LovelaceWeb.Plugs.GoogleOAuthCallback do
 
   defp destination({:error, _failure, %{capability: :calendar, origin: :onboarding}}),
     do: "/onboarding/calendar?notice=calendar_failed"
+
+  defp destination({:error, _failure, %{capability: :youtube}}),
+    do: "/connections/youtube?youtube=failed"
 
   defp destination({:error, failure, _attempt}), do: destination({:error, failure})
   defp destination({:error, failure}), do: ConnectionDiagnostics.failure_path(failure)

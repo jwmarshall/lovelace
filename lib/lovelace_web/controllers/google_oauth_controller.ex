@@ -38,15 +38,18 @@ defmodule LovelaceWeb.GoogleOAuthController do
         "/onboarding/connect?notice=connection_failed"
 
       _ ->
-        if params["capability"] == "calendar",
-          do: "/connections/calendar",
-          else: "/connections/gmail"
+        case params["capability"] do
+          "calendar" -> "/connections/calendar"
+          "youtube" -> "/connections/youtube"
+          _ -> "/connections/gmail"
+        end
     end
   end
 
   defp capability(nil), do: {:ok, :gmail}
   defp capability("gmail"), do: {:ok, :gmail}
   defp capability("calendar"), do: {:ok, :calendar}
+  defp capability("youtube"), do: {:ok, :youtube}
   defp capability(_), do: {:error, :invalid_request}
 
   defp origin(nil), do: {:ok, :connections}
@@ -54,13 +57,21 @@ defmodule LovelaceWeb.GoogleOAuthController do
   defp origin(_), do: {:error, :invalid_request}
 
   defp expected_account(value, _, :gmail) when value in [nil, ""], do: {:ok, nil}
-  defp expected_account(value, _, :calendar) when value in [nil, ""], do: {:error, :unavailable}
+
+  defp expected_account(value, _, capability)
+       when value in [nil, ""] and capability in [:calendar, :youtube],
+       do: {:error, :unavailable}
 
   defp expected_account(id, actor, capability) do
     case Mail.get_account(id, actor: actor) do
-      {:ok, %{status: :disconnected}} when capability == :calendar -> {:error, :unavailable}
-      {:ok, %{generation: generation}} -> {:ok, generation}
-      _ -> {:error, :unavailable}
+      {:ok, %{status: :disconnected}} when capability in [:calendar, :youtube] ->
+        {:error, :unavailable}
+
+      {:ok, %{generation: generation}} ->
+        {:ok, generation}
+
+      _ ->
+        {:error, :unavailable}
     end
   end
 end

@@ -24,8 +24,8 @@ while workspace and Connections layouts retain their existing controls and healt
    Google account. Later, **Connections → Calendar** offers the same opt-in authorization
    for an existing Google account with an explicitly selected receiving workspace.
    This reuses the same Google subject and Keychain item, not a second identity or owner
-   login. Choosing another Google identity is rejected. Granting Calendar also retains
-   read-only Gmail access.
+   login. Choosing another Google identity is rejected. Granting Calendar retains
+   read-only Gmail and any previously enabled YouTube access, requiring complete scope evidence.
 5. Consent started in onboarding returns to `/onboarding/calendar`, where the browser
    requests a queued first read for its local day and shows the calendar selection inline.
    Google's selected calendars seed the selection, including shared calendars. Save your
@@ -54,11 +54,11 @@ while retaining job uniqueness and all rate-limit cooldowns. Every browser reque
 10-second deadline covering both fetch and response-body reading. Failure or timeout keeps
 edits, exposes recovery, and does not automatically retry; it does not cancel queued work.
 
-Calendar consent is never requested automatically. Denying the optional consent leaves
-an existing Gmail connection intact. A normal Gmail reconnect disables Calendar locally;
-explicitly authorize Calendar again afterward. Calendar failures have their own health and
-freshness, rather than overwriting Gmail's unread count or sync errors. A global Google
-credential failure can still require reconnecting the shared connection.
+Calendar consent is never requested automatically. Denying or partially granting optional
+consent leaves the existing shared connection intact. A normal Gmail reconnect disables
+Calendar and YouTube locally; explicitly authorize them again afterward. Calendar failures
+have independent health and freshness, rather than overwriting Gmail's unread count or
+sync errors. A global Google credential failure can require reconnecting the shared connection.
 
 The browser's `/onboarding/project` and `/onboarding/authentication` steps include the
 Calendar API and both scopes above alongside Gmail setup. The optional stopped-terminal
@@ -127,13 +127,13 @@ Onboarding adds its workspace/account/generation fence and uses Calendar actions
 mutation; it does not query Calendar persistence or reconstruct Calendar policy.
 
 `Lovelace.Google.Access` is the single shared Google identity/credential coordination owner.
-Gmail and Calendar use the same account and subject serialization, generation checks and
-refresh-token rotation. Optional Calendar consent checks the expected current generation
-under that serializer. Unbound Gmail consent also rechecks its captured subject connection
+Gmail, Calendar and YouTube use the same account and subject serialization, generation checks
+and refresh-token rotation. Optional consent checks the expected current generation and all
+captured optional scopes under that serializer. Unbound Gmail consent also rechecks its captured subject connection
 (`:absent` or immutable account ID/generation) after acquiring the account lock, before any
 credential access; a late callback cannot resurrect a disconnected or replaced generation.
-Grant replacement commits the shared account/membership, clears
-Calendar synchronously, and only then admits the next Gmail sync and broadcasts invalidation.
+Grant replacement commits the shared account/membership, clears Calendar and YouTube
+synchronously, and only then admits the next Gmail sync and broadcasts invalidation.
 Disconnect uses that same serializer/reset boundary. Calendar never reaches into private
 Mail operations. The existing shared-credential admission gate still respects an active
 Gmail rate limit; Calendar provider failures/cooldowns remain Calendar-owned and do not
@@ -151,11 +151,11 @@ be requested again; a queue completion is not evidence of a successful fresh obs
 ## Removal and verification
 
 Removing an account from a workspace removes only that workspace association. It does
-not disable the reusable Calendar/Gmail connection or revoke Google access. **Connections
-→ Gmail → Disconnect everywhere** fences both integrations, clears their local caches and
-workspace associations, deletes the shared Keychain credential and attempts Google
-revocation. Revoking the shared grant can affect both services; Calendar does not expose
-an independent destructive revocation control.
+not disable the reusable Google connection or revoke Google access. **Connections
+→ Gmail → Disconnect everywhere** fences Gmail, Calendar and YouTube, clears their local
+caches and workspace associations, deletes the shared keychain credential and attempts
+Google revocation. Revoking the shared grant can affect all three services; Calendar does
+not expose an independent destructive revocation control.
 
 Automated tests use synthetic provider/vault responses and disposable browser data.
 They do not verify your Google consent configuration, shared-calendar permissions,

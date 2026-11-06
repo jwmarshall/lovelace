@@ -9,6 +9,7 @@ defmodule Lovelace.Mail.Account do
   sqlite do
     repo Lovelace.Repo
     table "gmail_accounts"
+    migration_defaults youtube_enabled: "false"
   end
 
   actions do
@@ -23,7 +24,7 @@ defmodule Lovelace.Mail.Account do
     end
 
     create :connect do
-      accept [:id, :subject, :email, :generation, :calendar_enabled]
+      accept [:id, :subject, :email, :generation, :calendar_enabled, :youtube_enabled]
       upsert? true
       upsert_identity :google_subject
 
@@ -31,6 +32,7 @@ defmodule Lovelace.Mail.Account do
         :email,
         :generation,
         :calendar_enabled,
+        :youtube_enabled,
         :status,
         :last_error,
         :next_poll_at,
@@ -59,6 +61,7 @@ defmodule Lovelace.Mail.Account do
         :next_poll_at,
         :generation,
         :calendar_enabled,
+        :youtube_enabled,
         :inbox_unread_count,
         :inbox_unread_recent_count,
         :inbox_unread_at,
@@ -90,6 +93,7 @@ defmodule Lovelace.Mail.Account do
     attribute :email, :string, allow_nil?: false, sensitive?: true
     attribute :generation, :uuid, allow_nil?: false
     attribute :calendar_enabled, :boolean, allow_nil?: false, default: false
+    attribute :youtube_enabled, :boolean, allow_nil?: false, default: false
 
     attribute :status, :atom do
       allow_nil? false

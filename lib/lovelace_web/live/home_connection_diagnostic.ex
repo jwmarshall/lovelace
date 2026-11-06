@@ -96,7 +96,7 @@ defmodule LovelaceWeb.HomeConnectionDiagnostic do
     do: assigns.scenes || (assigns.connections && assigns.connection_view == :gemini)
 
   defp active?(assigns, :google),
-    do: assigns.connections && assigns.connection_view in [:google, :gmail, :calendar]
+    do: assigns.connections && assigns.connection_view in [:google, :gmail, :calendar, :youtube]
 
   defp active?(assigns, :github), do: assigns.connections && assigns.connection_view == :github
 end

@@ -38,8 +38,31 @@ defmodule Lovelace.Google.Credentials do
   end
 
   defp persist_client(client_id, client_secret) do
-    with :ok <- Lovelace.ConnectionDiagnostics.invalidate(:google) do
-      OAuth.client_change(fn -> ClientCredentials.save(client_id, client_secret) end)
+    with :ok <- ClientCredentials.validate(client_id, client_secret),
+         :ok <- Lovelace.ConnectionDiagnostics.invalidate(:google) do
+      OAuth.client_change(fn -> replace_client(client_id, client_secret) end)
+    end
+  end
+
+  defp replace_client(client_id, client_secret) do
+    case ClientCredentials.read() do
+      {:ok, %{client_id: ^client_id, client_secret: ^client_secret}} ->
+        ClientCredentials.save(client_id, client_secret)
+
+      {:error, :invalid_configuration} ->
+        fence_and_save_client(client_id, client_secret)
+
+      {:ok, _} ->
+        fence_and_save_client(client_id, client_secret)
+
+      error ->
+        error
+    end
+  end
+
+  defp fence_and_save_client(client_id, client_secret) do
+    with :ok <- Lovelace.Google.Access.client_changed() do
+      ClientCredentials.save(client_id, client_secret)
     end
   end
 end

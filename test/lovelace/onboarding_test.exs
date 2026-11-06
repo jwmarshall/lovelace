@@ -247,6 +247,10 @@ defmodule Lovelace.OnboardingTest do
 
   test "connection evidence belongs to the receiving workspace and preserves first-read uncertainty" do
     assert {:ok, %{workspace_id: workspace_id}} = Onboarding.save_workspace("Chosen", @owner)
+
+    assert {:ok, true} =
+             Onboarding.save_credentials("synthetic-client", "synthetic-secret", @owner)
+
     other = Workspaces.create_workspace!("Other fixture workspace", @owner)
 
     account =
@@ -292,9 +296,6 @@ defmodule Lovelace.OnboardingTest do
         %{expected_generation: account.generation, calendar_enabled: true},
         @owner
       )
-
-    assert {:ok, true} =
-             Onboarding.save_credentials("synthetic-client", "synthetic-secret", @owner)
 
     writes = OnboardingKeychain.writes()
 

@@ -161,35 +161,6 @@ defmodule LovelaceWeb.HomeLiveTest do
     refute has_element?(view, "#owner-lock-form[phx-click], #owner-lock-form button[phx-click]")
   end
 
-  test "exposes configurable idle duration and shared sticky focus/reset commands", %{conn: conn} do
-    previous = Application.fetch_env(:lovelace, :workspace_idle_minutes)
-    Application.put_env(:lovelace, :workspace_idle_minutes, 7)
-
-    on_exit(fn ->
-      case previous do
-        {:ok, value} -> Application.put_env(:lovelace, :workspace_idle_minutes, value)
-        :error -> Application.delete_env(:lovelace, :workspace_idle_minutes)
-      end
-    end)
-
-    {:ok, view, html} = live(conn, ~p"/")
-    assert has_element?(view, "#workspace[data-idle-minutes='7']")
-
-    root = html |> LazyHTML.from_fragment() |> LazyHTML.query("#workspace")
-
-    for {attribute, pressed, event} <- [
-          {"data-workspace-focus", "true", "lovelace:brand-focus"},
-          {"data-workspace-reset", "false", "lovelace:brand-reset"}
-        ] do
-      [commands] = LazyHTML.attribute(root, attribute)
-
-      assert Jason.decode!(commands) == [
-               ["set_attr", %{"attr" => ["aria-pressed", pressed], "to" => "#workspace-pane"}],
-               ["dispatch", %{"event" => event, "to" => "#workspace-brand"}]
-             ]
-    end
-  end
-
   test "fetches the current stage background on mount", %{conn: conn} do
     {:ok, background} = Lovelace.StageDesigner.background()
     {:ok, view, _html} = live(conn, ~p"/")

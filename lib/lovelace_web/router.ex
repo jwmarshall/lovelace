@@ -10,7 +10,7 @@ defmodule LovelaceWeb.Router do
 
     plug :put_secure_browser_headers, %{
       "content-security-policy" =>
-        "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'self'"
+        "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-src https://www.youtube-nocookie.com; object-src 'none'; base-uri 'self'; frame-ancestors 'self'"
     }
   end
 
@@ -73,6 +73,8 @@ defmodule LovelaceWeb.Router do
 
       live "/accounts/:account_id/mail", HomeLive, :inbox
       live "/accounts/:account_id/mail/threads/:thread_id", HomeLive, :thread
+      live "/accounts/:account_id/youtube", HomeLive, :youtube
+      live "/accounts/:account_id/youtube/videos/:video_id", HomeLive, :youtube_video
       live "/connections", HomeLive, :connections
       live "/connections/:provider", HomeLive, :connection
       live "/scenes", HomeLive, :scenes

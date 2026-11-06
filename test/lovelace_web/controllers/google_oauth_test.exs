@@ -141,6 +141,7 @@ defmodule LovelaceWeb.GoogleOAuthTest do
     assert [%{account_id: id}] = Lovelace.Mail.workspace_accounts!(workspace_id, actor: @owner)
     assert id == account.id
     refute account.calendar_enabled
+    refute account.youtube_enabled
   end
 
   test "callback binds Google subject and leaks no code into Phoenix telemetry", %{

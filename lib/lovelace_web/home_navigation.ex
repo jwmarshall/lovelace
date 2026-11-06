@@ -3,6 +3,8 @@ defmodule LovelaceWeb.HomeNavigation do
 
   def workspace_path(id), do: "/workspaces/" <> segment(id)
   def account_path(id), do: "/accounts/" <> segment(id) <> "/mail"
+  def youtube_path(id), do: "/accounts/" <> segment(id) <> "/youtube"
+  def youtube_path(id, video), do: youtube_path(id) <> "/videos/" <> segment(video)
 
   def connections_path(provider \\ :index)
   def connections_path(:index), do: "/connections"
@@ -28,6 +30,11 @@ defmodule LovelaceWeb.HomeNavigation do
   def path(%{action: :settings}), do: "/settings"
   def path(%{action: :connections}), do: connections_path()
   def path(%{action: :connection, provider: provider}), do: connections_path(provider)
+
+  def path(%{action: :youtube, account_id: id}), do: youtube_path(id)
+
+  def path(%{action: :youtube_video, account_id: id, video_id: video}),
+    do: youtube_path(id, video)
 
   def path(%{action: :scenes, page: page, attempt_page: attempt_page}) do
     query("/scenes",
@@ -121,7 +128,7 @@ defmodule LovelaceWeb.HomeNavigation do
 
   # Accept old bookmarks, but never generate query-string navigation again.
   def destination(:index, %{"connections" => provider})
-      when provider in ["gmail", "calendar", "gemini", "github"],
+      when provider in ["gmail", "calendar", "gemini", "github", "youtube"],
       do: destination(:connection, %{"provider" => provider})
 
   def destination(:index, %{"calendar" => _}),
@@ -142,6 +149,7 @@ defmodule LovelaceWeb.HomeNavigation do
          {:ok, query} <- text(params["q"], 1024),
          {:ok, token} <- text(params["page_token"], 2048),
          {:ok, thread} <- thread(params["thread_id"]),
+         {:ok, video} <- video(params["video_id"]),
          {:ok, workspace} <- uuid(params["workspace_id"]),
          {:ok, account} <- uuid(params["account_id"]) do
       {:ok,
@@ -154,7 +162,8 @@ defmodule LovelaceWeb.HomeNavigation do
          account_id: account,
          query: query,
          page_token: token,
-         thread_id: thread
+         thread_id: thread,
+         video_id: video
        }}
     end
   end
@@ -166,10 +175,12 @@ defmodule LovelaceWeb.HomeNavigation do
   defp keys(:thread), do: ["account_id", "thread_id", "q", "page_token"]
   defp keys(:workspace_inbox), do: ["workspace_id", "account_id", "q", "page_token"]
   defp keys(:workspace_thread), do: ["workspace_id", "account_id", "thread_id", "q", "page_token"]
+  defp keys(:youtube), do: ["account_id"]
+  defp keys(:youtube_video), do: ["account_id", "video_id"]
   defp keys(_action), do: []
 
   defp provider(%{"provider" => provider})
-       when provider in ["google", "gmail", "gemini", "calendar", "github"],
+       when provider in ["google", "gmail", "gemini", "calendar", "github", "youtube"],
        do:
          {:ok,
           Map.fetch!(
@@ -178,7 +189,8 @@ defmodule LovelaceWeb.HomeNavigation do
               "gmail" => :gmail,
               "gemini" => :gemini,
               "calendar" => :calendar,
-              "github" => :github
+              "github" => :github,
+              "youtube" => :youtube
             },
             provider
           )}
@@ -198,6 +210,14 @@ defmodule LovelaceWeb.HomeNavigation do
 
   defp attempt_page(%{"attempt_page" => value}), do: page(%{"page" => value})
   defp attempt_page(_), do: {:ok, 1}
+
+  defp video(nil), do: {:ok, nil}
+
+  defp video(value) when is_binary(value) do
+    if Regex.match?(~r/\A[A-Za-z0-9_-]{11}\z/, value), do: {:ok, value}, else: :error
+  end
+
+  defp video(_), do: :error
 
   defp thread(nil), do: {:ok, nil}
 

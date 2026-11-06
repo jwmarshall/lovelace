@@ -50,6 +50,29 @@ defmodule Lovelace.OAuthJobsTest do
   alias Lovelace.TestSupport.OnboardingKeychain
   @owner %{role: :local_owner}
 
+  defmodule ResultBarrier do
+    def await(id, holder, observer) do
+      Process.put({__MODULE__, :holder}, holder)
+      Process.put({__MODULE__, :observer}, observer)
+      Lovelace.OAuth.await(id, __MODULE__)
+    end
+
+    def result(id) do
+      holder = Process.get({__MODULE__, :holder})
+      result = holder.result(id)
+
+      if observer = Process.delete({__MODULE__, :observer}) do
+        send(observer, {:result_observed, self(), result})
+
+        receive do
+          :continue -> result
+        end
+      else
+        result
+      end
+    end
+  end
+
   setup %{conn: conn} do
     start_supervised!({Lovelace.TestGitHub, []})
     start_supervised!(OnboardingKeychain)
@@ -114,6 +137,23 @@ defmodule Lovelace.OAuthJobsTest do
       assert :ok = Worker.perform(job)
       assert count(@provider) == 1
       assert {:ok, %{status: :completed, outcome: :connected}} = Exchange.get(reference.id)
+    end
+
+    test "#{provider} completion between holder and durable reads preserves its settled result",
+         context do
+      {holder, admit, _cancel} = attempt(@provider, context)
+      assert {:ok, reference} = admit.()
+      observer = self()
+      waiter = Task.async(fn -> ResultBarrier.await(reference.id, holder, observer) end)
+      assert_receive {:result_observed, reader, :pending}
+
+      assert :ok = Worker.perform(Lovelace.Repo.get!(Oban.Job, reference.job_id))
+      assert {:ok, %{status: :completed, outcome: :connected}} = Exchange.get(reference.id)
+      send(reader, :continue)
+
+      assert {:ok, result} = Task.await(waiter)
+      assert {:ok, ^result} = holder.result(reference.id)
+      assert count(@provider) == 1
     end
 
     test "#{provider} aborted enqueue leaves no durable admission or consumed authorization",
@@ -203,6 +243,28 @@ defmodule Lovelace.OAuthJobsTest do
     id = Ash.UUID.generate()
     assert {:error, _} = Lovelace.OAuth.exchange(id, :google, actor: nil)
     assert {:ok, nil} = Exchange.get(id)
+  end
+
+  test "provider failure between holder and durable reads retains its safe failure category",
+       context do
+    {:ok, state, _} = OAuth.begin(context.workspace.id, context.session)
+
+    assert {:ok, reference} =
+             OAuth.admit(state, context.session, %{"code" => "invalid-code", "state" => state})
+
+    observer = self()
+    waiter = Task.async(fn -> ResultBarrier.await(reference.id, OAuth, observer) end)
+    assert_receive {:result_observed, reader, :pending}
+
+    assert :ok = Worker.perform(Lovelace.Repo.get!(Oban.Job, reference.job_id))
+    assert {:ok, %{status: :failed, outcome: :reauthorize}} = Exchange.get(reference.id)
+    send(reader, :continue)
+
+    assert {:error, {:token_exchange, :provider_error}, %{capability: :gmail}} =
+             Task.await(waiter)
+
+    assert Mail.list_accounts!(actor: @owner) == []
+    assert count(:google) == 1
   end
 
   test "Google client mutation fences an already-running exchange", context do

@@ -22,6 +22,7 @@ import StageBackground, {observeStageImage} from "./hooks/stage_background"
 import ThemePicker from "./hooks/theme_picker"
 import {initOnboardingCalendar} from "./onboarding_calendar"
 import {initFirstRunEntrance} from "./first_run_entrance"
+import YouTubePlayer from "./hooks/youtube_player"
 
 // Controller-rendered unlock/setup has no LiveView hooks. These observers belong
 // only to their image elements and are collected with the document on navigation.
@@ -35,7 +36,7 @@ const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
   params: {_csrf_token: csrfToken},
-  hooks: {...colocatedHooks, StatusSignal, CalendarDay, CalendarEventTime, BrandReveal, WorkspaceIdle, NativeModal, WorkspaceEntrance, StageBackground, DailyOrientation, ObservationTime, MailReader, MailDate, MailFreshness, ThemePicker},
+  hooks: {...colocatedHooks, YouTubePlayer, StatusSignal, CalendarDay, CalendarEventTime, BrandReveal, WorkspaceIdle, NativeModal, WorkspaceEntrance, StageBackground, DailyOrientation, ObservationTime, MailReader, MailDate, MailFreshness, ThemePicker},
 })
 
 // Show progress bar on live navigation and form submits

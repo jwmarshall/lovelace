@@ -5,6 +5,8 @@
 Optional read-only Google Calendar agendas reuse these connections with separate,
 explicit consent and independent Calendar freshness. See [CALENDAR.md](CALENDAR.md)
 for scopes, selection, browser-local today, polling and shared disconnect semantics.
+Optional read-only YouTube subscriptions also reuse these connections with explicit
+consent and independent account feeds. See [DEVELOPMENT.md#youtube](DEVELOPMENT.md#youtube).
 
 One local owner unlocks LOVELACE with a password. Google connections are **not**
 owner identities. Connect Google once and attach that connection to one or more
@@ -105,8 +107,9 @@ workspace, you can defer all Google setup, or skip Gmail and Calendar individual
 Configure the client later in **Connections → Google** and connect accounts separately
 in **Connections → Gmail**. Use a dedicated project at <https://console.cloud.google.com/>:
 
-1. Enable the **Gmail API**. Enable **Google Calendar API** too only when using the
-   optional [Calendar integration](CALENDAR.md).
+1. Enable the **Gmail API**. Enable **Google Calendar API** only for optional
+   [Calendar](CALENDAR.md), and **YouTube Data API v3** only for optional
+   [YouTube](DEVELOPMENT.md#youtube).
 2. Configure **Google Auth Platform** branding and audience. Use **External** for
    personal Gmail or accounts from different organizations. Internal is limited to
    the project's own Google Workspace organization.
@@ -123,6 +126,9 @@ in **Connections → Gmail**. Use a dedicated project at <https://console.cloud.
    not grant access: Gmail connection still requests Gmail-only authorization. Enable
    Calendar explicitly in the following optional onboarding step, or later through
    **Connections → Calendar**; see [CALENDAR.md](CALENDAR.md).
+   For optional YouTube, add `https://www.googleapis.com/auth/youtube.readonly`, then
+   authorize it explicitly through **Connections → YouTube**. Existing enabled optional
+   scopes are retained only with complete returned consent evidence.
 
    OAuth requests may spell the email scope as the OpenID alias `email`; LOVELACE accepts
    Google's returned `userinfo.email` form too. Do not add `userinfo.profile` just to
@@ -140,9 +146,10 @@ in **Connections → Gmail**. Use a dedicated project at <https://console.cloud.
    For explicit stopped-server maintenance, `bin/lovelace mix lovelace.google.configure`
    remains available with hidden terminal prompts; it does not start provider work.
    Google Connections reports only local credential presence/availability, not verified
-   Google access. Saving settings does not grant Gmail or Calendar access. Replacing the
-   client leaves existing accounts and grants intact; switching clients may require
-   reconnecting those accounts.
+   Google access. Saving settings grants none of Gmail, Calendar or YouTube. Saving unchanged
+   settings preserves grants. Replacing the client cancels pending authorization, fences
+   active account generations, clears dependent caches and disables Calendar/YouTube.
+   Reconnect Gmail, then explicitly enable optional capabilities again.
 
 LOVELACE uses `http://localhost:4321/oauth/google/callback` by default. A custom `PORT`
 changes the callback port too. Desktop clients support loopback redirects without

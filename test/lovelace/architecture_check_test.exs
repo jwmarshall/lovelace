@@ -372,6 +372,21 @@ defmodule Lovelace.ArchitectureCheckTest do
     assert_rule(violations, :private_domain_capability)
   end
 
+  test "YouTube caches stay private and adapters cannot call its use cases" do
+    violations =
+      check("""
+      defmodule LovelaceWeb.VideoLive do
+        def load, do: Ash.read!(Lovelace.YouTube.State)
+      end
+      defmodule Lovelace.Integrations.Google.YouTube do
+        def refresh(id), do: Lovelace.YouTube.refresh(id)
+      end
+      """)
+
+    assert_rule(violations, :private_domain_persistence)
+    assert_rule(violations, :adapter_to_orchestration)
+  end
+
   test "comments and string contents cannot fabricate dependency findings" do
     assert [] ==
              check(~S'''

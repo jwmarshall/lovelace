@@ -58,6 +58,7 @@ config :lovelace,
     Lovelace.Workspaces,
     Lovelace.Mail,
     Lovelace.Calendar,
+    Lovelace.YouTube,
     Lovelace.GitHub,
     Lovelace.Google,
     Lovelace.Onboarding,
@@ -93,12 +94,13 @@ config :lovelace, :paid_render_provider, Lovelace.Integrations.Gemini.Interactio
 config :lovelace, Oban,
   repo: Lovelace.Repo,
   engine: Oban.Engines.Lite,
-  queues: [gmail: 1, calendar: 1, gemini: 1, github: 1, oauth: 1, diagnostics: 1],
+  queues: [gmail: 1, calendar: 1, youtube: 1, gemini: 1, github: 1, oauth: 1, diagnostics: 1],
   plugins: [
     {Oban.Plugins.Cron,
      crontab: [
        {"* * * * *", Lovelace.Mail.SweepWorker},
        {"* * * * *", Lovelace.Calendar.SweepWorker},
+       {"* * * * *", Lovelace.YouTube.SweepWorker},
        {"* * * * *", Lovelace.GitHub.SweepWorker},
        {"* * * * *", Lovelace.StageDesigner.RecoveryWorker}
      ]},
@@ -119,7 +121,9 @@ config :phoenix, :filter_parameters, [
   "refresh_token",
   "access_token",
   "api_key",
-  "calendar_id"
+  "calendar_id",
+  "channel_id",
+  "channel_ids"
 ]
 
 # Configure LiveView

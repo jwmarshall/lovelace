@@ -639,6 +639,8 @@ defmodule LovelaceWeb.GoogleCalendarOAuthTest do
     send(worker, :continue)
     assert redirected_to(Task.await(task), 303) == "/connections/calendar?calendar=connected"
     assert {:ok, current} = Task.await(reconnect)
+    assert current.generation != account.generation
+    refute current.calendar_enabled
     assert {:ok, "race-refresh"} = Lovelace.TestMailVault.get(account.id)
     assert Lovelace.Mail.get_account!(account.id, actor: @owner).generation == current.generation
   end

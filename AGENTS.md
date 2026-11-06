@@ -24,6 +24,11 @@ Stack: Phoenix LiveView, Ash/AshSqlite over Ecto/SQLite, and Tailwind.
   Organizing mail, drafting, sending and projects
   are outside current scope, not an implicit roadmap. Revisit only on a fresh user request;
   any future project must belong to one account with explicit/manual thread membership.
+- Optional read-only YouTube reuses Google connections with explicit additional consent.
+  Select subscriptions for a bounded chronological, per-account uploads feed, not a
+  recommendation feed. No writes, comments, downloads or auto-next. Playback uses an
+  explicitly click-loaded official player; YouTube controls ads and related content.
+  See the YouTube section in docs/DEVELOPMENT.md.
 - Read-only GitHub.com personal/organization installations and repository selections can
   belong to several workspaces. Home keeps bounded PR, issue and recent Actions readouts
   separate by installation owner; workspace selections filter those snapshots, never a
@@ -57,6 +62,8 @@ Stack: Phoenix LiveView, Ash/AshSqlite over Ecto/SQLite, and Tailwind.
 - Preserve the user's `.tool-versions`; ask before changing runtime targets.
 - Self-host UI assets. Vendor/pin third-party scripts and fonts locally with licenses,
   provenance, and checksums; no runtime CDN, font-service, or remote-image dependencies.
+  The sole browser-content exception is the fresh-click official YouTube nocookie iframe;
+  no remote parent assets or thumbnails. See docs/UI_CONTRACT.md for its input/idle boundary.
 
 ## Implementation
 

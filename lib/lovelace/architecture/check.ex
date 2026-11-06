@@ -30,6 +30,7 @@ defmodule Lovelace.Architecture.Check do
   ]
   @private_resources [
     "Elixir.Lovelace.Calendar.State",
+    "Elixir.Lovelace.YouTube.State",
     "Elixir.Lovelace.Mail.CacheEntry",
     "Elixir.Lovelace.Mail.ReadRequest",
     "Elixir.Lovelace.Mail.Disconnection",
@@ -218,6 +219,7 @@ defmodule Lovelace.Architecture.Check do
       (name in [
          "Elixir.Lovelace.Mail",
          "Elixir.Lovelace.Calendar",
+         "Elixir.Lovelace.YouTube",
          "Elixir.Lovelace.GitHub",
          "Elixir.Lovelace.StageDesigner",
          "Elixir.Lovelace.Google",

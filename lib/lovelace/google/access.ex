@@ -1,14 +1,15 @@
 defmodule Lovelace.Google.Access do
   @moduledoc """
-  Shared Google identity, credential and grant coordination for Gmail and Calendar.
+  Shared Google identity, credential and grant coordination for Gmail, Calendar and YouTube.
 
   One account/subject serializer owns grant replacement, refresh-token rotation,
-  disconnect fencing and synchronous Calendar reset. Tokens remain in the dedicated
+  disconnect fencing and synchronous dependent-state reset. Tokens remain in the dedicated
   credential adapter or the admitted caller's memory, never Ash inputs, SQL or jobs.
   Account resources remain exposed through Mail's supported resource actions.
   """
   alias Lovelace.Mail
   alias Lovelace.Mail.{Account, PollWorker, WorkspaceAccount}
+  require Ash.Query
   @owner %{role: :local_owner}
 
   @doc "Serializes shared connection work; nested calls by the same process are supported."
@@ -26,15 +27,38 @@ defmodule Lovelace.Google.Access do
   @doc "Publishes a grant only if its captured subject connection still matches under both locks."
   def accept(
         workspace_id,
-        %{subject: subject, email: email},
+        identity,
         refresh_token,
         capability,
         expected_generation,
         expected_connection
+      ),
+      do:
+        accept(
+          workspace_id,
+          identity,
+          refresh_token,
+          capability,
+          expected_generation,
+          expected_connection,
+          %{
+            calendar_enabled: capability == :calendar,
+            youtube_enabled: capability == :youtube
+          }
+        )
+
+  def accept(
+        workspace_id,
+        %{subject: subject, email: email},
+        refresh_token,
+        capability,
+        expected_generation,
+        expected_connection,
+        grants
       )
       when (refresh_token == :reuse_existing or
               (is_binary(refresh_token) and byte_size(refresh_token) > 0)) and
-             capability in [:gmail, :calendar] do
+             capability in [:gmail, :calendar, :youtube] and is_map(grants) do
     case Lovelace.Workspaces.get_workspace(workspace_id, actor: @owner) do
       {:ok, _} ->
         serial({:subject, :crypto.hash(:sha256, subject)}, fn ->
@@ -45,7 +69,8 @@ defmodule Lovelace.Google.Access do
             refresh_token,
             capability,
             expected_generation,
-            expected_connection
+            expected_connection,
+            grants
           )
         end)
 
@@ -56,7 +81,7 @@ defmodule Lovelace.Google.Access do
     _ -> {:error, :unavailable}
   end
 
-  def accept(_, _, _, _, _, _), do: {:error, :reconnect}
+  def accept(_, _, _, _, _, _, _), do: {:error, :reconnect}
 
   defp accept_identity(
          workspace_id,
@@ -65,7 +90,8 @@ defmodule Lovelace.Google.Access do
          token,
          capability,
          expected_generation,
-         expected_connection
+         expected_connection,
+         grants
        ) do
     with {:ok, previous} <- Mail.find_account(subject, actor: @owner) do
       id = if previous, do: previous.id, else: Ash.UUID.generate()
@@ -74,12 +100,12 @@ defmodule Lovelace.Google.Access do
         commit(
           workspace_id,
           id,
-          subject,
-          email,
+          {subject, email},
           token,
           capability,
           expected_generation,
-          expected_connection
+          expected_connection,
+          grants
         )
       end)
     end
@@ -88,22 +114,22 @@ defmodule Lovelace.Google.Access do
   defp commit(
          workspace_id,
          id,
-         subject,
-         email,
+         {subject, email},
          token,
          capability,
          expected_generation,
-         expected_connection
+         expected_connection,
+         grants
        ) do
     with :ok <- expected_connection(subject, id, expected_connection),
          :ok <- current_grant(id, capability, expected_generation),
          {:ok, prior} <- read_prior(id),
          :ok <- persist_token(id, token, prior) do
-      case persist_connection(workspace_id, id, subject, email, capability) do
+      case persist_connection(workspace_id, id, subject, email, grants) do
         {:ok, account} ->
           reset(id)
           PollWorker.enqueue(account)
-          Phoenix.PubSub.broadcast(Lovelace.PubSub, "mail:#{id}", {:mail_changed, id})
+          broadcast(id)
           {:ok, account}
 
         _ ->
@@ -132,7 +158,8 @@ defmodule Lovelace.Google.Access do
   defp expected_connection(_, _, _), do: {:error, :reconnect}
 
   # Optional consent cannot resurrect a disconnected or replaced generation.
-  defp current_grant(id, :calendar, expected) when not is_nil(expected) do
+  defp current_grant(id, capability, expected)
+       when capability in [:calendar, :youtube] and not is_nil(expected) do
     if current?(id, expected), do: :ok, else: {:error, :reconnect}
   end
 
@@ -155,8 +182,103 @@ defmodule Lovelace.Google.Access do
     end
   end
 
-  @doc "Resets dependent Calendar state synchronously; caller holds serial/2."
-  def reset(id), do: Lovelace.Calendar.clear(id)
+  @doc """
+  Publishes shared Google connection health to Gmail and optional-capability observers.
+
+  Call after persisting connection or health changes so each subscriber can re-read
+  the authoritative account without sharing ownership of another integration's topic.
+  """
+  def broadcast(id) do
+    Phoenix.PubSub.broadcast(Lovelace.PubSub, "mail:#{id}", {:mail_changed, id})
+    broadcast_health(id)
+  end
+
+  @doc "Invalidates dependent health projections without initiating a Gmail view refresh."
+  def broadcast_health(id) do
+    Phoenix.PubSub.broadcast(Lovelace.PubSub, "google:#{id}", {:google_changed, id})
+  end
+
+  @doc "Resets dependent integration state synchronously; caller holds serial/2."
+  def reset(id) do
+    Lovelace.Calendar.clear(id)
+    Lovelace.YouTube.clear(id)
+  end
+
+  @doc "Fences existing grants before replacing the shared Desktop client; OAuth admission is paused."
+  def client_changed do
+    fence_client_page(nil)
+  rescue
+    _ -> {:error, :unavailable}
+  end
+
+  defp fence_client_page(after_id) do
+    query =
+      Account
+      |> Ash.Query.for_read(:read, %{}, actor: @owner)
+      |> Ash.Query.select([:id])
+      |> Ash.Query.unset(:sort)
+      |> Ash.Query.sort(id: :asc)
+      |> Ash.Query.limit(100)
+
+    query = if after_id, do: Ash.Query.filter(query, id > ^after_id), else: query
+
+    with {:ok, accounts} <- Ash.read(query),
+         :ok <- fence_client_accounts(accounts) do
+      if length(accounts) == 100,
+        do: fence_client_page(List.last(accounts).id),
+        else: :ok
+    else
+      _ -> {:error, :unavailable}
+    end
+  end
+
+  defp fence_client_accounts(accounts) do
+    Enum.reduce_while(accounts, :ok, fn account, :ok ->
+      case serial(account.id, fn -> fence_client(account.id) end) do
+        :ok -> {:cont, :ok}
+        _ -> {:halt, {:error, :unavailable}}
+      end
+    end)
+  end
+
+  defp fence_client(id) do
+    case Mail.get_account(id, actor: @owner) do
+      {:ok, %{status: :disconnected}} ->
+        # Keep the generation owned by any admitted credential cleanup.
+        reset(id)
+        :ok
+
+      {:ok, account} ->
+        fence_client_account(account)
+
+      _ ->
+        {:error, :unavailable}
+    end
+  end
+
+  defp fence_client_account(account) do
+    with {:ok, _} <-
+           Mail.update_account(
+             account,
+             %{
+               expected_generation: account.generation,
+               generation: Ash.UUID.generate(),
+               status: :reconnect,
+               calendar_enabled: false,
+               youtube_enabled: false,
+               last_error: :reconnect,
+               inbox_unread_count: nil,
+               inbox_unread_recent_count: nil,
+               inbox_unread_at: nil,
+               inbox_unread_error: nil
+             },
+             actor: @owner
+           ) do
+      reset(account.id)
+      broadcast(account.id)
+      :ok
+    end
+  end
 
   defp restore_failure(id, prior) do
     case restore(id, prior) do
@@ -165,7 +287,7 @@ defmodule Lovelace.Google.Access do
     end
   end
 
-  defp persist_connection(workspace_id, id, subject, email, capability) do
+  defp persist_connection(workspace_id, id, subject, email, grants) do
     Ash.transact([Account, WorkspaceAccount], fn ->
       account =
         Mail.save_connection!(
@@ -174,7 +296,8 @@ defmodule Lovelace.Google.Access do
             subject: subject,
             email: email,
             generation: Ash.UUID.generate(),
-            calendar_enabled: capability == :calendar
+            calendar_enabled: Map.get(grants, :calendar_enabled, false) == true,
+            youtube_enabled: Map.get(grants, :youtube_enabled, false) == true
           },
           actor: @owner
         )

@@ -23,11 +23,21 @@ defmodule Lovelace.OAuth do
           Process.sleep(25)
           await_result(id, holder, until)
         else
-          {:error, :unavailable}
+          # The worker settles its holder before completing the durable exchange.
+          # Completion may race this pending read, so observe the settled result
+          # once more before treating a terminal job or deadline as unavailable.
+          terminal_result(holder, id)
         end
 
       result ->
         result
+    end
+  end
+
+  defp terminal_result(holder, id) do
+    case holder.result(id) do
+      :pending -> {:error, :unavailable}
+      result -> result
     end
   end
 
