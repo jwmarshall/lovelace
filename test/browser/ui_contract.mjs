@@ -601,6 +601,16 @@ async function homeLayout(width, forced = false) {
     assert.equal(layout.calendarHeadingVisible, true, `Calendar starts alongside Gmail: ${JSON.stringify(layout)}`)
   }
   assert.equal(layout.forced, forced)
+  assert.equal(await evaluate(`Array.from(document.querySelectorAll(
+    '#home-readouts, #home-overview, #calendar-agenda, .workspace-directory-home .github-plane, #github-readouts'
+  )).every(element => getComputedStyle(element).backdropFilter === 'none')`), true,
+  'Home Email, Calendar and GitHub readouts add no component-level backdrop blur')
+  if (!forced) {
+    assert.equal(await evaluate(`Array.from(document.querySelectorAll(
+      '#home-readouts, #home-overview, #calendar-agenda, .workspace-directory-home .github-plane, #github-readouts'
+    )).every(element => getComputedStyle(element).backgroundColor === 'rgba(0, 0, 0, 0)')`), true,
+    'Home Email, Calendar and GitHub readouts have no persistent charcoal fill')
+  }
   const metrics = await evaluate(`(() => {
     const labels = [...document.querySelectorAll('#home-overview .home-count > .metric-label, #github-readouts .github-home-metric dt')];
     const typography = labels.map(label => {

@@ -36,6 +36,8 @@ Regular content uses `--card-surface: rgba(18,23,21,.71)`. Raised/hover surfaces
 
 Gmail account inboxes and conversations follow the study's transparent-surface exception (`study.css` mail list/reader rules): no persistent fill on the list, toolbar, status region, reader or account/return header. Only the hovered inbox row gains `--inset`; neighboring rows stay transparent. The reader header stays in normal flow so scrolled correspondence cannot overlap transparent sticky controls. Preserve the shared scenery blur/shade, opaque text, horizontal dividers, visible keyboard focus and system-color backgrounds in forced colors. Do not turn this scoped exception into a global card-token change.
 
+Home Email, Calendar and GitHub readouts share this transparent-surface exception: no persistent charcoal fill or component-level backdrop blur on their shared parents or account rows. Retain the app-wide scenery treatment, opaque text, dividers and accessible focus. Workspace and Connections working-plane fills and blur remain unchanged.
+
 ### M02 — One foundation, one owner per decision
 
 `tokens.css` is the approved annotated foundation, loaded before consumers. Reuse shared controls and semantic tokens before adding variants. In the application, integrate with its existing token/component owners; do not ship the designer's specimen sheets or maintain divergent copies of the same public decision.
