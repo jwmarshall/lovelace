@@ -439,6 +439,27 @@ defmodule MonolithWeb.CalendarLiveTest do
     refute_receive {:calendar_provider, _}
   end
 
+  test "Home keeps the empty-day heading without the workspace explanation", ctx do
+    Application.put_env(:monolith, :calendar_live_events, [])
+    poll(ctx.a, ctx.window)
+    window = Map.new(ctx.window, fn {key, value} -> {String.to_existing_atom(key), value} end)
+
+    home =
+      render_component(&CalendarComponents.agenda/1,
+        accounts: [ctx.a],
+        window: window,
+        home: true
+      )
+      |> LazyHTML.from_fragment()
+
+    workspace = agenda(ctx.a, ctx.window) |> LazyHTML.from_fragment()
+    selector = "#calendar-agenda-account-#{ctx.a.id} .calendar-message"
+
+    assert [_] = LazyHTML.query(home, selector <> " .empty-state-title") |> Enum.to_list()
+    assert [] == LazyHTML.query(home, selector <> " .empty-state-copy") |> Enum.to_list()
+    assert [_] = LazyHTML.query(workspace, selector <> " .empty-state-copy") |> Enum.to_list()
+  end
+
   test "failed first updates are warnings, never successful empty agendas", ctx do
     for {reason, warning} <- [
           keychain: "Credential store unavailable. Check Connections.",

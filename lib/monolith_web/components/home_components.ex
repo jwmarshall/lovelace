@@ -56,7 +56,11 @@ defmodule MonolithWeb.HomeComponents do
         </div>
       </div>
       <ul :if={!@error && !@loading && @accounts != []} id="home-accounts" class="home-accounts">
-        <.account_readout :for={account <- @accounts} account={account} />
+        <.account_readout
+          :for={account <- @accounts}
+          account={account}
+          show_connection_warning={false}
+        />
       </ul>
     </section>
     """
@@ -64,6 +68,7 @@ defmodule MonolithWeb.HomeComponents do
 
   attr :account, :map, required: true
   attr :inbox_path, :string, default: nil
+  attr :show_connection_warning, :boolean, default: true
 
   def account_readout(assigns) do
     ~H"""
@@ -85,19 +90,19 @@ defmodule MonolithWeb.HomeComponents do
         </span>
         <span id={"home-count-#{@account.id}"} class="home-unread">
           <span class="home-count">
+            <span class="metric-label">UNREAD</span>
             <b aria-hidden="true">{if is_integer(@account.inbox_unread_count),
               do: @account.inbox_unread_count,
               else: "—"}</b>
-            <span>Unread inbox conversations</span>
             <span class="sr-only">{if is_integer(@account.inbox_unread_count),
-              do: "#{@account.inbox_unread_count} total",
-              else: "Total unavailable"}</span>
+              do: "#{@account.inbox_unread_count} total unread inbox conversations",
+              else: "Total unavailable for unread inbox conversations"}</span>
           </span>
           <span class="home-count home-count-recent">
+            <span class="metric-label">LAST 24H</span>
             <b aria-hidden="true">{if is_integer(@account.inbox_unread_recent_count),
               do: @account.inbox_unread_recent_count,
               else: "—"}</b>
-            <span>Received in the last 24h</span>
             <span class="sr-only">{if is_integer(@account.inbox_unread_recent_count),
               do: "#{@account.inbox_unread_recent_count} received in the last 24 hours",
               else: "Last 24 hours unavailable"}</span>
@@ -105,7 +110,10 @@ defmodule MonolithWeb.HomeComponents do
         </span>
       </.link>
       <div id={"home-health-#{@account.id}"} class="home-account-health">
-        <span :if={health_message(@account)} class="connection-warning">{health_message(@account)}</span>
+        <span
+          :if={@show_connection_warning && health_message(@account)}
+          class="connection-warning"
+        >{health_message(@account)}</span>
         <.status_signal
           :if={!@account.inbox_unread_at && !health_message(@account)}
           id={"home-unknown-#{@account.id}"}

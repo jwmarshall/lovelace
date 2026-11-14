@@ -81,7 +81,7 @@ defmodule MonolithWeb.CalendarComponents do
               <h4 class="empty-state-title">
                 {if snapshot.selected_ids == [], do: "No calendars selected", else: "No events today"}
               </h4>
-              <p class="empty-state-copy">
+              <p :if={!@home || snapshot.selected_ids == []} class="empty-state-copy">
                 {if snapshot.selected_ids == [],
                   do: "Choose which calendars appear in MONOLITH.",
                   else: "Your selected calendars have no events today."}

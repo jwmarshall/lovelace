@@ -59,6 +59,10 @@ Local Space Grotesk is the reading/UI face; system monospace serves registers an
 
 Display headings use the fluid 42–82px preset; section registers use 12px/1.6 with .1em tracking; account titles use 23px/1.25 with -.03em tracking. These are not brand presets. Mail is 18px/1.8, reducing to 17px/1.75 at ≤760px, with a 68ch reading measure and 76ch outer reader. Introductory copy is bounded at 58ch. Long addresses, subjects, URLs and errors wrap without losing identity or causing page-level horizontal scrolling; scoped table overflow is allowed.
 
+Home email metrics use the shared GitHub `metric-label` style above counts: **UNREAD** and **LAST 24H**. Accessible descriptions retain unread inbox-conversation and rolling received-time meanings. Home omits per-account connection-warning copy; workspace readouts retain it, and connection recovery remains available.
+
+Home Calendar keeps the concise **No events today** heading without repeating it in supporting copy. Calendar-selection guidance and workspace agenda copy remain unchanged.
+
 ### M05 — Semantic rhythm, not baseline snapping
 
 The spacing ladder is 4/8/12/16/24/32/48px. Default relationships: label/control 8px; heading/copy 12px; related content 16px; groups 24px; header/content 32px; independent sections 48px. One parent owns each gap; do not stack child margins/spacers onto it or force readable line heights onto a grid. Wrapping changes block height, not the next semantic gap.

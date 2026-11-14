@@ -23,7 +23,6 @@
 .home-unread { display: flex; gap: 20px; }
 .home-count { display: flex; flex-direction: column; gap: 8px; text-align: right; }
 .home-count b { font-size: var(--type-number-size); line-height: var(--type-number-leading); letter-spacing: var(--type-number-tracking); font-weight: 400; font-variant-numeric: tabular-nums; }
-.home-count > span:not(.sr-only) { font: 10px/1.5 var(--font-mono); color: var(--muted); max-width: 90px; }
 .home-count-recent b { color: var(--attention); }
 .home-account-health { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 16px; margin-top: 16px; font-size: 13px; color: var(--muted); }
 .home-account-health:not(:has(> :not(:empty))) { display: none; }

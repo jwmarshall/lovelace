@@ -187,7 +187,7 @@ defmodule MonolithWeb.HomeOverviewLiveTest do
     Operations.broadcast(first.id)
     assert has_element?(view, "#home-count-#{first.id}", "8")
     assert has_element?(view, "#home-count-#{first.id} .home-count-recent", "2")
-    assert has_element?(view, "#home-health-#{first.id}", "Gmail rate limit")
+    refute has_element?(view, "#home-health-#{first.id} .connection-warning")
     assert has_element?(view, "#home-count-#{second.id}", "19")
     assert has_element?(view, "#home-count-#{second.id} .home-count-recent", "5")
     refute_receive {:home_fetch, _}
@@ -374,7 +374,7 @@ defmodule MonolithWeb.HomeOverviewLiveTest do
     )
 
     {:ok, view, _html} = live(conn, ~p"/")
-    assert has_element?(view, "#home-health-#{account.id}", "Reconnect required")
+    refute has_element?(view, "#home-health-#{account.id} .connection-warning")
     assert has_element?(view, "#home-count-#{account.id} .sr-only", "Total unavailable")
     assert has_element?(view, "#home-health-#{account.id} .home-recovery", "Connections")
 
@@ -451,7 +451,7 @@ defmodule MonolithWeb.HomeOverviewLiveTest do
 
     {:ok, view, _html} = live(conn, ~p"/")
     assert has_element?(view, "#home-count-#{account.id} .home-count b", "9")
-    assert has_element?(view, "#home-health-#{account.id}", "Reconnect required")
+    refute has_element?(view, "#home-health-#{account.id} .connection-warning")
 
     assert has_element?(
              view,
