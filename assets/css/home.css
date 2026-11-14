@@ -9,7 +9,6 @@
 .home-greeting h1 { font-size: var(--type-display-size); font-weight: 400; letter-spacing: var(--type-display-tracking); line-height: var(--type-display-leading); }
 .home-readouts { display: grid; grid-template-columns: 1.75fr 1fr; gap: 0; align-items: start; border-block: 1px solid var(--line); background: transparent; }
 .home-readouts > * { min-width: 0; }
-.workspace-directory-home .github-plane { background: transparent; backdrop-filter: none; }
 .home-overview { border-right: 1px solid var(--line-interior); }
 .home-section-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 64px; padding: 20px 24px; border-bottom: 1px solid var(--line-interior); }
 .home-section-heading > * { min-width: 0; }

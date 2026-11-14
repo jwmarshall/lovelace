@@ -9,9 +9,9 @@ the coverage map is not evidence that checks passed.
 
 ## Direction and shared stage
 
-- Use the canonical MONOLITH identity and single Charcoal working plane defined by
-  the design system. Preserve readable account-separated content over scenery,
-  including empty, loading and error states.
+- Use the canonical MONOLITH identity and single working plane defined by the design
+  system: transparent content, white hover frosting and light controls. Preserve readable
+  account-separated content over scenery, including empty, loading and error states.
 - All application routes share the same presentation authority, including static
   setup/unlock, directories, provider pages, mail, Calendar, GitHub and Scenes.
   Account-letter register codes are deliberately omitted; retain numbered sections
@@ -367,10 +367,10 @@ Use the same hierarchy on static setup/unlock pages and authenticated views.
   no provider form and makes no Keychain/provider probe. Opening a provider focuses the
   heading; each provider offers **All connections** back to the overview.
 - Provider pages have a **Google / Gmail / Calendar / Gemini / GitHub** subnav below
-  the title, with only the selected provider mounted. Use glass-owned main content and
-  transparent contextual help in a 1.6:1 split, stacked at narrow widths. GitHub's authorized
-  accounts and joined installation-owner list own separate glass grounds; primary empty/error
-  state copy also has a glass owner rather than reading directly over scenery.
+  the title, with only the selected provider mounted. Main content and contextual help
+  stay transparent in a 1.6:1 split, stacked at narrow widths. GitHub's authorized
+  accounts and joined installation-owner list retain separate ruled planes; primary
+  empty/error state copy also stays transparent over the app-wide scenery treatment.
   Native links identify the provider with `aria-current`; switching preserves focus on the
   chosen subnav control. Provider paths are `/connections/google`, `/connections/gmail`,
   `/connections/calendar`, `/connections/gemini` and `/connections/github`. Each supports direct GET, reload and new tabs;

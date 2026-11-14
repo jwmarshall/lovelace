@@ -1,4 +1,4 @@
-/* MONOLITH foundations. Charcoal is the only working interface.
+/* MONOLITH foundations. Transparent content, white frosting and light controls.
    Shared decisions live here under docs/MONOLITH_DESIGN_SYSTEM.md;
    component primitives consume them, never own a second palette. */
 :root {
@@ -13,10 +13,12 @@
   --warning: #f2bb63;
   --error: #ff9c89;
   --success: #79d5b0;
-  /* One working plane; raised and inset controls retain independent grounds. */
-  --card-surface: rgba(18,23,21,.71);
-  --surface: rgba(18,23,21,.88);
-  --inset: rgba(18,23,21,.72);
+  /* Selection foreground follows the reading polarity of its surface. */
+  --selection-content: #151b19;
+  /* White frosting for hover; opaque white grounds for controls, never local blur. */
+  --card-surface: transparent;
+  --surface: rgba(255,255,255,.08);
+  --inset: #f3f1e9;
   /* Semantic spacing: detail, labels, copy, related content, groups, sections. */
   --space-1: 4px;
   --space-2: 8px;
@@ -123,8 +125,8 @@
   --border-muted: var(--line-interior);
   --border-default: var(--line);
   --border-divider: var(--line);
-  --border-input: #8b9289;
-  --border-strong: #8b9289;
+  --border-input: #737b72;
+  --border-strong: var(--border-input);
   --border-accent: var(--accent);
   --border-notice: var(--line);
   --surface-subtle: var(--inset);
@@ -133,7 +135,7 @@
   --surface-input: var(--inset);
   --surface-hover-quiet: var(--surface);
   --surface-hover: var(--surface);
-  --surface-hover-action: var(--surface);
+  --surface-hover-action: #fff;
   --surface-hover-strong: var(--surface);
   --modal-backdrop: rgba(7,17,13,.65);
   --shadow-color: #000;
@@ -148,9 +150,37 @@
   --depth: 0;
   --noise: 0;
 }
+/* Transient elevated surfaces share light-ground reading and signal colors. */
+.monolith-modal, .workspace-menu-actions, .monolith-flash {
+  color-scheme: light;
+  --ink: #151b19;
+  --muted: #49554d;
+  --accent: #334038;
+  --attention: #07647a;
+  --warning: #805100;
+  --error: #a32e22;
+  --selection-content: #f3f1e9;
+  --success: #146348;
+  --line: rgba(21,27,25,.35);
+  --line-interior: rgba(21,27,25,.16);
+  --color-base-content: var(--ink);
+  --color-secondary: var(--muted);
+  --color-error: var(--error);
+}
 /* Shared metric labels: reading face, above counts with the component-owned 8px gap. */
 .metric-label { font-family: var(--font-body); font-size: var(--text-small); font-weight: var(--weight-regular); line-height: var(--leading-body); letter-spacing: normal; color: var(--muted); text-transform: uppercase; }
 @media (forced-colors: active) {
+  .monolith-modal, .workspace-menu-actions, .monolith-flash {
+    --ink: CanvasText;
+    --muted: CanvasText;
+    --accent: LinkText;
+    --attention: CanvasText;
+    --warning: CanvasText;
+    --error: CanvasText;
+    --success: CanvasText;
+    --line: CanvasText;
+    --line-interior: CanvasText;
+  }
   :root {
     --ink: CanvasText;
     --muted: CanvasText;

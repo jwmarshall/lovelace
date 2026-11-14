@@ -34,7 +34,7 @@
 .workspace-menu summary { display: grid; place-items: center; width: 44px; height: 44px; border: 1px solid transparent; cursor: pointer; list-style: none; padding: 0; }
 .workspace-menu summary::-webkit-details-marker { display: none; }
 .workspace-menu summary:hover, .workspace-menu[open] summary { background: var(--surface); border-color: var(--line); }
-.workspace-menu-actions { position: absolute; top: 48px; right: 0; min-width: 180px; padding: 8px; background: var(--color-base-100); border: 1px solid var(--line); }
+.workspace-menu-actions { position: absolute; top: 48px; right: 0; min-width: 180px; padding: 8px; background: var(--inset); color: var(--ink); border: 1px solid var(--line); }
 .workspace-menu-actions .workspace-action { width: 100%; justify-content: start; text-align: left; }
 .connections-panel { display: flex; flex-direction: column; min-width: 0; font-size: 16px; line-height: 1.55; }
 .connection-card { min-width: 0; padding: 24px; border-bottom: 1px solid var(--line-interior); background: transparent; }
@@ -52,7 +52,7 @@
 #gmail-connection-modal .mail-oauth > div { margin: 0; min-width: 0; }
 #gmail-connection-modal .mail-oauth button { justify-self: start; }
 .gmail-connection-cancel { margin-top: 12px; }
-.connection-workspace-select { display: block; width: 100%; min-height: 44px; padding: 10px 12px; background: var(--inset); color: var(--ink); border: 1px solid var(--border-input); border-radius: 0; }
+.connection-workspace-select { display: block; width: 100%; min-height: 44px; padding: 10px 12px; background: var(--surface-input); color: var(--color-primary-content); color-scheme: light; border: 1px solid var(--border-input); border-radius: 0; }
 .connections-panel .mail-oauth { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; }
 .connections-panel .mail-oauth > div { margin: 0; min-width: min(220px,100%); }
 .connections-panel .label { color: var(--muted); font-size: 13px; }

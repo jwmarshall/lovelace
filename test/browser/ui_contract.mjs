@@ -135,8 +135,33 @@ async function media(features = []) {
   await send("Emulation.setEmulatedMedia", {features})
 }
 
+async function transparentContentSurfaces() {
+  const violations = await evaluate(`(() => {
+    if (matchMedia('(forced-colors: active)').matches || matchMedia('print').matches) return [];
+    const planes = document.querySelectorAll(
+      '.home-readouts, .github-plane, .workspace-detail-grid, .workspace-add-plane, ' +
+      '.workspace-list, .integration-add-panel, .empty-state, .provider-main, ' +
+      '.github-account-plane, .github-state-message, .installation-owner-list, ' +
+      '.github-activity-body, .connections-overview, .settings-panel, ' +
+      '.scene-setup, .scene-direction, .scene-generation-settings, .scene-current-preview, ' +
+      '.scene-gallery-section, .scene-attempt-history, .scene-preview, ' +
+      '.onboarding-plane, .setup-plane, .public-error-content'
+    );
+    return [...planes].flatMap(element => {
+      const style = getComputedStyle(element);
+      if (style.backgroundColor === 'rgba(0, 0, 0, 0)' &&
+          style.backgroundImage === 'none' && style.backdropFilter === 'none' &&
+          style.opacity === '1') return [];
+      return [{element: element.id || element.className, fill: style.backgroundColor,
+        image: style.backgroundImage, blur: style.backdropFilter, opacity: style.opacity}];
+    });
+  })()`)
+  assert.deepEqual(violations, [], 'all resting content planes stay transparent and opaque-text, without component blur')
+}
+
 async function screenshot(name) {
   await evaluate("document.fonts.ready.then(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve(true)))))")
+  await transparentContentSurfaces()
   const {data} = await send("Page.captureScreenshot", {format: "png", fromSurface: true, captureBeyondViewport: false})
   const file = path.join(artifacts, `${name}.png`)
   await writeFile(file, Buffer.from(data, "base64"), {flag: "wx", mode: 0o600})
@@ -762,6 +787,7 @@ async function verifyPreferences() {
   const before = await sceneManifest()
   await click('#show-settings')
   await waitFor("location.pathname === '/settings' && !!document.querySelector('#idle-preference') && !!document.querySelector('#startup-preference')", 'real Settings preferences')
+  await screenshot('settings-desktop')
   assert.equal(await evaluate("!!document.querySelector('#theme-picker')"), false, 'working UI has no alternate palette')
   assert.equal(await evaluate("document.documentElement.dataset.theme"), 'charcoal', 'Charcoal is the single working foundation')
   assert.equal(await evaluate("document.querySelector('#startup-preference input[type=checkbox]').checked"), false, 'startup is opt-in by default')
@@ -836,6 +862,7 @@ async function verifyGitHubActivity() {
   await click('#workspace-pane')
   await focused()
   assert.equal(await evaluate('location.pathname'), route)
+  await screenshot('github-activity-desktop')
   await click('#github-owner-activity a[href=\"/workspaces/' + workspaceId + '\"]')
   await waitFor("!!document.querySelector('#workspace-landing')", 'activity returns to originating workspace')
   await click('#home-link')
@@ -1234,9 +1261,14 @@ try {
     return {x: rect.left + rect.width / 2, y: rect.top + rect.height / 2};
   })()`)
   await send("Input.dispatchMouseEvent", {type: "mouseMoved", ...hoverRow})
-  assert.deepEqual(await evaluate(`Array.from(document.querySelectorAll('.mail-thread')).slice(0, 2)
-    .map(row => getComputedStyle(row).backgroundColor)`),
-  ["rgba(18, 23, 21, 0.72)", "rgba(0, 0, 0, 0)"], "only the hovered inbox row gains the study's inset frosting")
+  assert.equal(await evaluate(`(() => {
+    const [hovered, neighbor] = document.querySelectorAll('.mail-thread');
+    const style = getComputedStyle(hovered);
+    const channels = style.backgroundColor.match(/[\\d.]+/g).map(Number);
+    return channels.slice(0, 3).every(channel => channel > 240) &&
+      channels[3] > 0 && channels[3] < .2 && style.backdropFilter === 'none' &&
+      getComputedStyle(neighbor).backgroundColor === 'rgba(0, 0, 0, 0)';
+  })()`), true, "only the hovered inbox row gains light white frosting without local blur")
   await send("Input.dispatchMouseEvent", {type: "mouseMoved", x: 0, y: 0})
   assert.equal(await evaluate("getComputedStyle(document.querySelector('.mail-thread')).backgroundColor"),
     "rgba(0, 0, 0, 0)", "leaving the row restores its transparent surface")
@@ -1766,6 +1798,40 @@ try {
       assert.ok(dimensions.card > 200 && dimensions.menu >= 44 && dimensions.menuHeight >= 44 && dimensions.lock >= 44,
         `usable card/menu/Lock targets at ${width}px (forced colors: ${forced}): ${JSON.stringify(dimensions)}`)
       if (!forced) await screenshot(`workspaces-${width}`)
+      await click(`#rename-${workspaceId}`)
+      await waitFor("document.querySelector('#workspace-modal')?.matches(':modal')", "light control contrast dialog")
+      const primaryPoint = await evaluate(`(() => {
+        const rect = document.querySelector('#workspace-form button[type=submit]').getBoundingClientRect();
+        return {x: rect.left + rect.width / 2, y: rect.top + rect.height / 2};
+      })()`)
+      await send("Input.dispatchMouseEvent", {type: "mouseMoved", ...primaryPoint})
+      const controlContrasts = await evaluate(`(() => {
+        const luminance = color => {
+          const rgb = color.match(/[\\d.]+/g).slice(0, 3).map(value => {
+            const channel = Number(value) / 255;
+            return channel <= .04045 ? channel / 12.92 : ((channel + .055) / 1.055) ** 2.4;
+          });
+          return rgb[0] * .2126 + rgb[1] * .7152 + rgb[2] * .0722;
+        };
+        const input = document.querySelector('#workspace-name');
+        return [
+          ['field', getComputedStyle(input)],
+          ['selected text', getComputedStyle(input, '::selection')],
+          ['hovered primary', getComputedStyle(document.querySelector('#workspace-form button[type=submit]'))]
+        ].map(([label, style]) => {
+          const foreground = luminance(style.color), background = luminance(style.backgroundColor);
+          return {label, ratio: (Math.max(foreground, background) + .05) / (Math.min(foreground, background) + .05)};
+        });
+      })()`)
+      for (const {label, ratio} of controlContrasts) {
+        assert.ok(ratio >= 4.5, `${label} remains readable at ${width}px (forced colors: ${forced}): ${ratio}`)
+      }
+      await click("#workspace-form button[type=button]")
+      await waitFor(`!document.querySelector('#workspace-modal') && document.activeElement.id === 'rename-${workspaceId}'`,
+        "contrast dialog cancelled and Rename focus restored without saving")
+      // Native close can restore the opener before the hook's own focus frame.
+      // Let that handoff finish before the following Escape/scenery assertion.
+      await evaluate("new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve(true))))")
       if (width === 390) {
         assert.equal(await evaluate("getComputedStyle(document.querySelector('#workspace-list')).gridTemplateColumns.split(' ').length"), 1)
         await click(`#open-${workspaceId}`)

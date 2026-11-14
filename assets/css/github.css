@@ -1,4 +1,4 @@
-/* Owner registers are transparent; Home, workspace and provider parents own glass. */
+/* Owner registers and their Home, workspace and provider parents stay transparent. */
 .github-readouts { grid-column: 1 / -1; min-width: 0; }
 .github-section-heading, .github-org-heading, .github-owner-heading, .github-review-heading { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 16px 24px; }
 .github-section-heading { margin-bottom: 24px; }
@@ -64,13 +64,13 @@
 .workspace-github > .github-section-heading { margin: 0; padding: 20px 24px; border-bottom: 1px solid var(--line-interior); }
 .workspace-github > .github-section-heading + .connection-card { border-top: 0; }
 .workspace-github > .connection-help { margin-block: 16px 24px; }
-.provider-main:has(> .github-connections) { background: transparent; border: 0; padding: 0; backdrop-filter: none; }
-.github-account-plane, .github-state-message { background: var(--card-surface); border-block: 1px solid var(--line); backdrop-filter: blur(18px); }
+.provider-main:has(> .github-connections) { background: transparent; border: 0; padding: 0; }
+.github-account-plane, .github-state-message { background: var(--card-surface); border-block: 1px solid var(--line); }
 .github-client-settings { display: grid; justify-items: start; gap: 24px; min-width: 0; padding: 24px; }
 .github-client-settings > p { margin: 0; font-size: 13px; overflow-wrap: anywhere; }
 .github-authorization { padding: 24px; }
 .github-state-message { margin-block: 0 24px; padding: 24px; }
-.github-account-plane > .github-state-message { margin: 0; border: 0; background: transparent; backdrop-filter: none; }
+.github-account-plane > .github-state-message { margin: 0; border: 0; background: transparent; }
 .github-account-plane > :is(.github-client-settings, .github-authorization, .github-state-message) + .github-authorized-accounts { border-top: 1px solid var(--line-interior); }
 .github-authorized-accounts > .connection-card { padding: 24px; border: 0; }
 .github-authorized-accounts > .connection-card + .connection-card { border-top: 1px solid var(--line-interior); }
@@ -79,14 +79,14 @@
 .github-account-body:has(> *) { margin-bottom: 16px; }
 .github-installation-section { margin-top: 32px; padding-top: 32px; border-top: 1px solid var(--line); }
 .github-installation-section .github-installations-label { padding: 0; margin: 0 0 20px; border: 0; font-size: 24px; line-height: 1.3; letter-spacing: -.025em; }
-.installation-owner-list { display: grid; gap: 0; background: var(--card-surface); border-block: 1px solid var(--line); backdrop-filter: blur(18px); }
+.installation-owner-list { display: grid; gap: 0; background: var(--card-surface); border-block: 1px solid var(--line); }
 .github-installation-row { padding: 24px; min-width: 0; }
 .github-installation-row + .github-installation-row { border-top: 1px solid var(--line-interior); }
 .github-installation-row .github-org-heading p { margin: 0; }
 .github-connections .connection-card-head > [role="status"] { justify-self: end; min-width: 0; max-width: 100%; text-align: right; }
 .github-connections .connection-card-head > [role="status"] .status-signal { max-width: 100%; }
 @media (forced-colors: active) {
-  .github-account-plane, .github-state-message, .installation-owner-list { background: Canvas; backdrop-filter: none; border-color: CanvasText; }
+  .github-account-plane, .github-state-message, .installation-owner-list { background: Canvas; border-color: CanvasText; }
 }
 .github-authorization-body { display: flex; flex-direction: column; align-items: flex-start; gap: 16px; min-width: 0; }
 .github-authorization-body > p { margin: 0; max-width: 58ch; }
@@ -108,7 +108,7 @@
 .github-repository-choices label { display: flex; gap: 12px; align-items: center; min-height: 44px; cursor: pointer; overflow-wrap: anywhere; }
 .github-repository-choices input[type="checkbox"] { width: 18px; height: 18px; flex: 0 0 auto; accent-color: var(--ink); }
 .github-owner-activity { min-width: 0; }
-.github-activity-body { min-width: 0; padding: 24px; background: var(--card-surface); border-block: 1px solid var(--line); backdrop-filter: blur(18px); }
+.github-activity-body { min-width: 0; padding: 24px; background: var(--card-surface); border-block: 1px solid var(--line); }
 .github-activity-heading { display: grid; gap: 12px; margin-bottom: 32px; }
 .github-activity-heading .github-section-heading { margin: 0; }
 .github-activity-heading h1 { margin: 0; font-size: clamp(42px, 6vw, 82px); font-weight: 400; line-height: 1.05; letter-spacing: -.04em; overflow-wrap: anywhere; }

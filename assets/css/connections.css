@@ -1,4 +1,4 @@
-/* Provider controls own one glass plane; adjacent guidance stays on the working plane. */
+/* Provider content and adjacent guidance share the transparent working plane. */
 .provider-layout { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); align-items: start; gap: 32px; }
 .provider-main, .provider-context { min-width: 0; }
 .provider-main { background: var(--card-surface); border-block: 1px solid var(--line); }

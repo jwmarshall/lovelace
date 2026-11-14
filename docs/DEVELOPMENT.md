@@ -3,7 +3,7 @@
 MONOLITH is the application and browser identity. The OTP app is
 `:monolith`, modules use `Monolith`/`MonolithWeb`, and the Tailwind/esbuild profile is `monolith`.
 Sources live in `lib/monolith/` and `lib/monolith_web/`; local databases use `monolith_*.db`.
-The single Charcoal presentation follows [MONOLITH_DESIGN_SYSTEM.md](MONOLITH_DESIGN_SYSTEM.md);
+The shared presentation follows [MONOLITH_DESIGN_SYSTEM.md](MONOLITH_DESIGN_SYSTEM.md);
 [UI_CONTRACT.md](UI_CONTRACT.md) retains operational and interaction boundaries.
 
 ## Local setup
@@ -791,14 +791,15 @@ The gate does not reuse a user's server/profile/private data.
 normal entrance/directional exit and gate; sidebar/Lock visibility and focusability;
 static unlock with/without JavaScript; static/live image success/failure; integration menus;
 workspace/integration/Connections navigation; unsaved input, scroll and first-key/click wake;
-reduced-motion changes; forced colors; desktop/narrow layouts; dedicated reader body size,
+reduced-motion changes; forced colors; desktop/narrow layouts; transparent resting content
+surfaces without component backdrop blur (including Settings and GitHub activity); dedicated reader body size,
 reading measure and long-token wrapping; native message/recipient disclosures and Refresh
 preservation; reader Escape/wake and async browser-Back row-focus/scroll restoration;
 real URL Back/Forward, copied conversation/search/page links and workspace reload; and page errors/off-origin
 requests/CSP events across navigation. The real browser idle timer uses a shortened
 **disposable DOM setting**; native Node tests retain the actual three-minute deadline.
 Chrome is shut down and disposable data removed on completion. The runner has startup,
-protocol, a 120-second overall deadline and shutdown deadlines; it is not a cross-browser
+protocol, a 180-second overall deadline and shutdown deadlines; it is not a cross-browser
 or screen-reader suite. Delayed synthetic reads exercise A→B→A navigation on one LiveSocket;
 durable GitHub discovery retains operation/job correlation across a browser reload.
 See [UI_CONTRACT.md](UI_CONTRACT.md#verification-map) for coverage boundaries.
@@ -806,8 +807,8 @@ See [UI_CONTRACT.md](UI_CONTRACT.md#verification-map) for coverage boundaries.
 ### Presentation and preferences
 
 [MONOLITH_DESIGN_SYSTEM.md](MONOLITH_DESIGN_SYSTEM.md) is the single visual authority.
-`assets/css/themes.css` integrates the Charcoal foundation with the application's semantic
-tokens; consumers must not introduce alternate palettes or a second component system.
+`assets/css/themes.css` integrates transparent planes, white hover frosting and light controls
+with the application's semantic tokens; consumers must not introduce a second component system.
 There is no theme picker or browser-local palette bootstrap. Canonical decorative status
 signals accompany visible labels rather than hover/focus-only status tooltips.
 

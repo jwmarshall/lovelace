@@ -29,7 +29,7 @@
 .mail-search > div { flex: 1; min-width: 0; margin: 0; padding: 0; }
 .mail-search label { display: block; }
 .mail-search label > .label { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-.mail-search-input { width: 100%; min-width: 0; height: 48px; padding: 8px 12px; border: 1px solid var(--border-input); border-right: 0; background: var(--inset); color: var(--ink); border-radius: 0; font-size: 16px; line-height: 1.5; }
+.mail-search-input { width: 100%; min-width: 0; height: 48px; padding: 8px 12px; border: 1px solid var(--border-input); border-right: 0; background: var(--surface-input); color: var(--color-primary-content); color-scheme: light; border-radius: 0; font-size: 16px; line-height: 1.5; }
 .mail-search .workspace-action { min-height: 48px; border-radius: 0; font-size: 16px; }
 .mail-panel :is(a,button,input,select,summary):focus-visible, .gmail-connection-card :is(a,button,select,summary):focus-visible { outline: 2px solid var(--attention); outline-offset: 3px; }
 .mail-toolbar { align-items: center; flex-wrap: wrap; margin-bottom: 12px; gap: 16px; padding: 10px 0; border-block: 1px solid var(--line); }
@@ -46,7 +46,7 @@
 #mail-threads { border-bottom: 1px solid var(--line); }
 .mail-thread { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; align-items: start; gap: 10px 16px; width: 100%; min-height: 108px; text-align: left; padding: 22px 16px; border-bottom: 1px solid var(--line-interior); }
 .mail-thread:last-child { border-bottom: 0; }
-.mail-thread:hover { background: var(--inset); }
+.mail-thread:hover { background: var(--surface); }
 .mail-thread-marker { width: 6px; height: 1px; margin-top: 10px; background: var(--muted); }
 .mail-thread-unread .mail-thread-marker { height: 6px; margin-top: 8px; background: var(--attention); }
 .mail-thread-content { display: block; min-width: 0; }

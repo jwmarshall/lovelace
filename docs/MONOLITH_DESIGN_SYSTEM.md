@@ -29,13 +29,11 @@ Read actual consuming components, selectors and hooks to establish current behav
 
 ### M01 — One working plane, not a dashboard
 
-Scenery supplies atmosphere, never the reading surface. Join account-separated registers on neutral Charcoal glass with open left/right edges, horizontal boundaries and quieter internal dividers. No nested floating content cards, decorative card shadows/content gradients or colored status-panel fills. Scenery contrast-shade overlays are not content decoration. Keep text fully opaque; changing surface opacity must not dim its descendants.
+Scenery supplies atmosphere and the app-wide contrast treatment. All content components use transparent working planes with open left/right edges, horizontal boundaries and quieter internal dividers. No persistent charcoal content fills, component-level backdrop blur, nested floating content cards, decorative card shadows/content gradients or colored status-panel fills. Keep text fully opaque; changing surface opacity must not dim its descendants.
 
-Regular content uses `--card-surface: rgba(18,23,21,.71)`. Raised/hover surfaces use `.88`, inset controls `.72`. Outer boundaries use 1px `--line` at 23% opacity; inner separators use 1px `--line-interior` at 12%. A shared parent owns the glass and adjoining children are transparent; avoid doubled rules. Buttons, fields, focus indicators, selected controls and dialogs retain their own backgrounds/outlines. Native modal elevation is not permission to add content-card shadows.
+`--card-surface: transparent` is the shared resting content surface across Home, Workspaces, Connections, GitHub activity, Scenes, Settings, onboarding, setup and public error content. Outer boundaries use 1px `--line` at 23% opacity; inner separators use 1px `--line-interior` at 12%. Adjoining sections avoid doubled rules. Hovered interactive rows/tiles use light white frosting (`--surface: rgba(255,255,255,.08)`), never charcoal or component blur. Filled buttons and inputs use the same opaque off-white ground as current navigation (`#f3f1e9`) with dark text; filled-button hover is white. Quiet/text/destructive actions keep their semantic distinction. Transient menus/notices and native dialogs use the same light ground with readable dark text and locally appropriate signal colors. Native modal elevation is not permission to add content-card shadows.
 
-Gmail account inboxes and conversations use transparent surfaces: no persistent fill on the list, toolbar, status region, reader or account/return header. Only the hovered inbox row gains `--inset`; neighboring rows stay transparent. The reader header stays in normal flow so scrolled correspondence cannot overlap transparent sticky controls. Preserve the shared scenery blur/shade, opaque text, horizontal dividers, visible keyboard focus and system-color backgrounds in forced colors. Do not turn this scoped exception into a global card-token change.
-
-Home Email, Calendar and GitHub readouts share this transparent-surface exception: no persistent charcoal fill or component-level backdrop blur on their shared parents or account rows. Retain the app-wide scenery treatment, opaque text, dividers and accessible focus. Workspace and Connections working-plane fills and blur remain unchanged.
+This app-wide addendum extends the existing transparent Home and Gmail treatment to every component. Preserve the shared scenery blur/shade, opaque text, horizontal dividers, visible keyboard focus and system-color backgrounds in forced colors. Only hovered interactive rows/tiles gain a transient surface; neighboring content stays transparent. The Gmail reader header stays in normal flow so scrolled correspondence cannot overlap transparent sticky controls.
 
 ### M02 — One foundation, one owner per decision
 
@@ -45,7 +43,7 @@ Add a public token only for a reusable decision with a real consumer and usage c
 
 ### M03 — Fixed identity, fluid surrounding layout
 
-Use the authored MONOLITH mark, not a redrawn approximation or separately named symbol. Outline and Solid are treatments of one identity. Light/dark plates prove reproduction; they do not create interface themes. The working interface is Charcoal only. Full unlock uses Outline; the compact sidebar uses Solid with negative-space creases cutting through its ground. Do not use the mark as a status/loading icon.
+Use the authored MONOLITH mark, not a redrawn approximation or separately named symbol. Outline and Solid are treatments of one identity. Light/dark plates prove reproduction; they do not create interface themes. The working interface uses transparent planes over shaded scenery, white frosting on hover and light controls. Full unlock uses Outline; the compact sidebar uses Solid with negative-space creases cutting through its ground. Its button has no pointer-hover outline/border, but retains visible keyboard focus. Do not use the mark as a status/loading icon.
 
 | Preset | Mark | Wordmark | Tracking | Gap |
 | --- | --- | --- | --- | --- |
@@ -74,7 +72,7 @@ The spacing ladder is 4/8/12/16/24/32/48px. Default relationships: label/control
 
 Apply these relationships semantically, not as authorization to mechanically rewrite every existing margin. Explicit exception: a disclosure following content has an additional 16px top margin outside its hairline, even with a parent stack gap. First-child disclosures need no extra margin.
 
-Workspace integration headings use a single interior bottom hairline and 20px/24px header inset. Provider account headers separate full identity from adjacent status; at ≤600px status sits above the title, right-aligned. GitHub keeps authorized accounts and joined installation-owner rows on independent glass grounds, with single internal separators. Integration credential-modal triggers belong in the main card; registration instructions belong in the right context column, stacked after the main content on narrow screens. GitHub's setup guide starts collapsed and uses a plain, non-underlined disclosure summary. Google/Gemini add-settings actions have no redundant rule above them.
+Workspace integration headings use a single interior bottom hairline and 20px/24px header inset. Provider account headers separate full identity from adjacent status; at ≤600px status sits above the title, right-aligned. GitHub keeps authorized accounts and joined installation-owner rows on independently ruled transparent planes, with single internal separators. Integration credential-modal triggers belong in the main card; registration instructions belong in the right context column, stacked after the main content on narrow screens. GitHub's setup guide starts collapsed and uses a plain, non-underlined disclosure summary. Google/Gemini add-settings actions have no redundant rule above them.
 
 Individual Connections integrations, Scenes task cards and Settings cards share the Gemini-derived primary header: uppercase label, 23px regular title, then one full-width interior hairline. Use the shared `card-section-heading` owner with 24px padding (16px inline at ≤600px), with adjacent status/action on the right; narrow screens place it above the label/title. This header remains present through loading, setup and connected states, separate from account identity rows and the outer numbered page title.
 
@@ -139,7 +137,7 @@ Escape/idle is visual scenery only. Preserve route, focus, scroll and drafts; no
 
 ### M12 — Accessibility is a release requirement
 
-Measure actual scenery/glass composites: ordinary text ≥4.5:1; large text and essential control boundaries ≥3:1. Decorative dividers are exempt from control contrast. Colored small text belongs on dark glass. Swatches and source inspection do not certify contrast.
+Measure actual scenery composites: ordinary text ≥4.5:1; large text and essential control boundaries ≥3:1. Decorative dividers are exempt from control contrast. Colored small text must remain readable over the shared scenery contrast treatment. Swatches and source inspection do not certify contrast.
 
 Prove keyboard access, visible focus, 320px layout, 200% text zoom and 400% page zoom, long/bidi identities and expanded labels, reduced motion including mid-sequence changes, forced colors and print. Preserve names/counts/errors/current navigation, wrap without overlap or page-level horizontal scroll. Forced colors removes scenery and uses system colors; reduced motion/print preserves complete identity/signals. Print keeps readable dark-on-white content/labels/rules and removes decorative chrome/motion. Neutral logo reproduction plates have explicit print-polarity exceptions. Programmatically focused headings may suppress their own outline; actionable focus may not.
 

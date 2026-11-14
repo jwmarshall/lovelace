@@ -201,7 +201,7 @@
 .onboarding-instructions > ul > li + li { margin-top: 12px; }
 .onboarding-scopes code { font-size: 13px; overflow-wrap: anywhere; }
 
-/* Joined sections remain transparent; their parent alone owns glass. */
+/* Joined sections and their parent remain transparent, separated by rules. */
 .onboarding-note,
 .owner-notice,
 .onboarding-error {
@@ -250,8 +250,9 @@
   padding: 12px 16px;
   border: 1px solid var(--control-line, var(--muted));
   border-radius: 0;
-  background: var(--inset);
-  color: var(--ink);
+  background: var(--surface-input);
+  color: var(--color-primary-content);
+  color-scheme: light;
   font: inherit;
 }
 
@@ -321,7 +322,7 @@
 .public-error-page {
   min-height: 100dvh;
   padding: 48px 32px;
-  background: var(--surface);
+  background: var(--scenery-fallback);
   color: var(--ink);
 }
 

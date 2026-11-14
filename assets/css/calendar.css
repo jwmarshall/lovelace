@@ -1,4 +1,4 @@
-/* Account-separated registers: the joined parent owns the working-plane glass. */
+/* Account-separated registers share the transparent working plane. */
 .calendar-agenda, .calendar-connections { min-width: 0; margin: 0; color: var(--ink); }
 .calendar-heading { display: grid; gap: 12px; }
 .calendar-heading h3, .calendar-heading p, .calendar-account h4, .calendar-event p, .calendar-account-heading p { margin: 0; }

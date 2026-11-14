@@ -1,4 +1,4 @@
-/* Joined connections share one glass plane; independent scene tasks own ruled panels. */
+/* Connections and independent scene tasks use transparent, ruled content planes. */
 .connections-overview { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; background: var(--card-surface); border-block: 1px solid var(--line); }
 .connections-overview .connection-provider { display: flex; flex-direction: column; align-items: stretch; gap: 12px; min-width: 0; min-height: 44px; padding: 24px; border: 0; background: transparent; box-shadow: none; border-radius: 0; overflow-wrap: anywhere; }
 .connections-overview .connection-provider:not(:nth-child(3n)) { border-inline-end: 1px solid var(--line-interior); }
@@ -13,7 +13,7 @@
 .scenes-panel > *, .scene-editor > * { min-width: 0; }
 .scene-setup, .scene-gallery-section, .scene-attempt-history { grid-column: 1 / -1; }
 .scene-editor { display: grid; align-content: start; gap: 24px; min-width: 0; }
-.scene-setup, .scene-direction, .scene-generation-settings, .scene-current-preview, .scene-gallery-section, .scene-attempt-history { padding: 24px; background: var(--card-surface); border-block: 1px solid var(--line); backdrop-filter: blur(18px); }
+.scene-setup, .scene-direction, .scene-generation-settings, .scene-current-preview, .scene-gallery-section, .scene-attempt-history { padding: 24px; background: var(--card-surface); border-block: 1px solid var(--line); }
 .scene-setup { display: grid; gap: 24px; }
 .scene-setup .empty-state-body { display: grid; gap: 16px; max-width: 58ch; }
 .scenes-panel :is(.scene-setup, .scene-direction, .scene-generation-settings, .scene-current-preview, .scene-gallery-section, .scene-attempt-history) > .card-section-heading { margin: -24px -24px 24px; min-width: 0; background: transparent; }
@@ -39,7 +39,7 @@
 .scene-status:empty { display: none; }
 .scene-gallery { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; list-style: none; margin: 0; padding: 0; }
 .scene-card { min-width: 0; border-bottom: 1px solid var(--line-interior); }
-.scene-preview { position: relative; aspect-ratio: 16 / 9; overflow: hidden; background: var(--inset); }
+.scene-preview { position: relative; aspect-ratio: 16 / 9; overflow: hidden; background: transparent; }
 .scene-preview-fallback { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font-size: 13px; padding: 16px; }
 .scene-preview img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; visibility: hidden; }
 .scene-preview img[data-loaded=true] { visibility: visible; }
