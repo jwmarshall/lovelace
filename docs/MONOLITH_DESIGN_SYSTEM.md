@@ -1,8 +1,8 @@
-# MONOLITH design system — rebrand implementation contract
+# MONOLITH design system
 
 ## Authority and cutover boundary
 
-The expanded [MONOLITH study](../design-concepts/monolith-study/index.html) is the approved visual/content target. [README](../README.md#monolith-designer-study) commits the redesign and rebrand; the original ten concepts are alternatives, not additional requirements. This document distills that target into implementation rules. It does not migrate the application or authorize provider work.
+This document defines the approved visual and experience requirements for the production application. The retired design gallery and study are not required to implement or verify this system. Presentation requirements do not authorize provider work.
 
 The approved rebrand is the full application identity: MONOLITH in prose/UI, `:monolith` for OTP/configuration, `Monolith`/`MonolithWeb` modules, `monolith` project-owned libraries, paths, commands, storage/keychain names and tooling, and `MONOLITH_*` environment variables. Third-party names remain upstream-owned. All production application routes are selected for this presentation; there is no phase-1-only browser identity exception.
 
@@ -12,19 +12,18 @@ This document is the single presentation authority for the production applicatio
 
 ### Source map
 
-All study paths below are under `design-concepts/monolith-study/`.
+Current production owners supply implementation evidence:
 
-| Decision | Primary evidence |
+| Decision | Primary owner |
 | --- | --- |
-| Public values and usage | `tokens.css:1–124`; `css-legend.js:24–36,82–110` |
-| Mark, lockups, choreography | `identity.js:4–39,70–92`; `identity.css:11–34,147–218` |
-| Glass, shell, responsive composition | `study.css:1–22`; `identity.css:36–146,219–236` |
-| Components, register grammar, interaction | `components.js:22–205`, especially `73–106,110–159,165–205` |
-| Voice, state, consent, resilience | `voice.js:23–66,75–137,197–236` |
-| View coverage and simulator limits | `views.js:307–322`; `study.js:68–117,292–337,537–565` |
-| Unchanged product/security behavior | `docs/UI_CONTRACT.md`; relevant Gmail, Calendar, development and stage guides |
+| Public values and usage | `assets/css/themes.css` |
+| Mark and lockups | `lib/monolith_web/components/layouts.ex` |
+| Identity choreography | `assets/js/hooks/brand_reveal.js`; `assets/css/onboarding.css` |
+| Signals and motion | `lib/monolith_web/components/status_components.ex`; `assets/css/status.css` |
+| Working plane, shell and responsive composition | `assets/css/app.css`; `lib/monolith_web/components/layouts.ex` |
+| Product/security behavior | `docs/UI_CONTRACT.md`; relevant Gmail, Calendar, development and stage guides |
 
-Use these locations to acquire current evidence; line numbers are navigation aids, not frozen snapshots. Read actual consuming selectors/controllers, not only their prose.
+Read actual consuming components, selectors and hooks to establish current behavior; this document defines their acceptance requirements, not a claim that every implementation passes.
 
 ## Core rules
 
@@ -34,13 +33,13 @@ Scenery supplies atmosphere, never the reading surface. Join account-separated r
 
 Regular content uses `--card-surface: rgba(18,23,21,.71)`. Raised/hover surfaces use `.88`, inset controls `.72`. Outer boundaries use 1px `--line` at 23% opacity; inner separators use 1px `--line-interior` at 12%. A shared parent owns the glass and adjoining children are transparent; avoid doubled rules. Buttons, fields, focus indicators, selected controls and dialogs retain their own backgrounds/outlines. Native modal elevation is not permission to add content-card shadows.
 
-Gmail account inboxes and conversations follow the study's transparent-surface exception (`study.css` mail list/reader rules): no persistent fill on the list, toolbar, status region, reader or account/return header. Only the hovered inbox row gains `--inset`; neighboring rows stay transparent. The reader header stays in normal flow so scrolled correspondence cannot overlap transparent sticky controls. Preserve the shared scenery blur/shade, opaque text, horizontal dividers, visible keyboard focus and system-color backgrounds in forced colors. Do not turn this scoped exception into a global card-token change.
+Gmail account inboxes and conversations use transparent surfaces: no persistent fill on the list, toolbar, status region, reader or account/return header. Only the hovered inbox row gains `--inset`; neighboring rows stay transparent. The reader header stays in normal flow so scrolled correspondence cannot overlap transparent sticky controls. Preserve the shared scenery blur/shade, opaque text, horizontal dividers, visible keyboard focus and system-color backgrounds in forced colors. Do not turn this scoped exception into a global card-token change.
 
 Home Email, Calendar and GitHub readouts share this transparent-surface exception: no persistent charcoal fill or component-level backdrop blur on their shared parents or account rows. Retain the app-wide scenery treatment, opaque text, dividers and accessible focus. Workspace and Connections working-plane fills and blur remain unchanged.
 
 ### M02 — One foundation, one owner per decision
 
-`tokens.css` is the approved annotated foundation, loaded before consumers. Reuse shared controls and semantic tokens before adding variants. In the application, integrate with its existing token/component owners; do not ship the designer's specimen sheets or maintain divergent copies of the same public decision.
+`assets/css/themes.css` owns the annotated shared foundation, loaded before consumers. Reuse shared controls and semantic tokens before adding variants. Integrate with existing token/component owners; do not maintain divergent copies of the same public decision or add alternate theme systems.
 
 Add a public token only for a reusable decision with a real consumer and usage comment, one declaration per line under an annotated group. Keep composition in layout owners and examples in specimens. Brand ground/size/ tracking, signal size/motion and measurement knobs remain local. Keep literal media conditions beside the affected layout; CSS custom properties are not usable media-query thresholds. Generic transition tokens do not own artwork choreography.
 
@@ -73,7 +72,7 @@ Home Calendar keeps the concise **No events today** heading without repeating it
 
 The spacing ladder is 4/8/12/16/24/32/48px. Default relationships: label/control 8px; heading/copy 12px; related content 16px; groups 24px; header/content 32px; independent sections 48px. One parent owns each gap; do not stack child margins/spacers onto it or force readable line heights onto a grid. Wrapping changes block height, not the next semantic gap.
 
-The measured unit-04 specimens demonstrate these relationships, not an authorization to mechanically rewrite every existing margin. Explicit exception: a disclosure following content has an additional 16px top margin outside its hairline, even with a parent stack gap. First-child disclosures need no extra margin; the designer toolbar stays flush.
+Apply these relationships semantically, not as authorization to mechanically rewrite every existing margin. Explicit exception: a disclosure following content has an additional 16px top margin outside its hairline, even with a parent stack gap. First-child disclosures need no extra margin.
 
 Workspace integration headings use a single interior bottom hairline and 20px/24px header inset. Provider account headers separate full identity from adjacent status; at ≤600px status sits above the title, right-aligned. GitHub keeps authorized accounts and joined installation-owner rows on independent glass grounds, with single internal separators. Integration credential-modal triggers belong in the main card; registration instructions belong in the right context column, stacked after the main content on narrow screens. GitHub's setup guide starts collapsed and uses a plain, non-underlined disclosure summary. Google/Gemini add-settings actions have no redundant rule above them.
 
@@ -83,9 +82,9 @@ Individual Connections integrations, Scenes task cards and Settings cards share 
 
 Collapsed navigation is 64px on desktop and 48px at ≤760px, showing only the mark. The same ≥44×44px button toggles **Expand sidebar / Collapse sidebar** with truthful expanded state. Desktop expansion widens the existing column to 224px and moves content. Narrow expansion sits in normal flow above content: no overlay, backdrop, custom focus trap, separate mobile header or horizontal product navigation.
 
-Product links are 01 Home, 02 Workspaces, 03 Connections, 04 Scenes, 05 Settings. Lock sits at the top right of every working page header, not in the sidebar; it remains a native CSRF-protected POST within the working gate. Designer Views/Identity/Components/CSS/Voice/Proof do not enter product navigation. Account mail activates Home; workspace activity activates Workspaces. Escape collapses expanded navigation and returns focus to the mark; destination selection collapses it and focuses the destination heading. Preserve native links, URLs, reload, Back/Forward and safe deep-link return through unlock; do not copy the study's hash router.
+Product links are 01 Home, 02 Workspaces, 03 Connections, 04 Scenes, 05 Settings. Lock sits at the top right of every working page header, not in the sidebar; it remains a native CSRF-protected POST within the working gate. Account mail activates Home; workspace activity activates Workspaces. Escape collapses expanded navigation and returns focus to the mark; destination selection collapses it and focuses the destination heading. Preserve native links, URLs, reload, Back/Forward and safe deep-link return through unlock.
 
-Working content has no added top padding. Default working max width is 1440px, 1600px at ≥1700px; desktop outer gutter 32px and content separation 36px. Main Home/workspace readouts stack at ≤1200px; secondary dense grids simplify at ≤1080px and ≤440px. The ≤760px shell transition is not a ban on other content-fit thresholds: connection headers stack at ≤600px, status right-aligned above title/metadata. Identity/rhythm specimen thresholds 1000/800/600px do not create additional product shell modes.
+Working content has no added top padding. Default working max width is 1440px, 1600px at ≥1700px; desktop outer gutter 32px and content separation 36px. Main Home/workspace readouts stack at ≤1200px; secondary dense grids simplify at ≤1080px and ≤440px. The ≤760px shell transition is not a ban on other content-fit thresholds: connection headers stack at ≤600px, status right-aligned above title/metadata.
 
 The shared shell owns the outer top inset: 24px, or 20px at ≤950px. Top-level numbered registers occupy a 44px row centered with the sidebar mark; content itself adds no top padding. Lock stays right-aligned beside the register/account context; at ≤760px return links wrap onto a following row. Home places **01 / Home** above the entire date/focus hero. The hero has no top or bottom hairline; its interior date divider and separate readout boundaries remain. Its Gmail empty state retains the decorative mail service icon; omit the redundant “Separate inboxes” label. The GitHub activity header has one bottom interior hairline, without doubled first-row borders.
 
@@ -108,7 +107,7 @@ Reuse the six canonical local SVGs: healthy check bars, loading squares, unknown
 
 Keep account name/address or installation owner adjacent to counts, health and content. Do not aggregate inboxes, agendas or cross-owner GitHub activity. Gmail/Calendar share a Google connection, not consent, health or counts. GitHub selections are snapshot subsets, not complete repository totals. Unknown/expired counts use an accessible dash, never fake zero; zero needs a complete successful observation. Count unread inbox conversations, not messages or a partial page. Gmail last 24h is a rolling received-time window; Calendar Today is browser-local day. GitHub timestamps explicitly identify UTC. Failed refresh/render/local checks do not advance the last successful provider observation.
 
-Production deliberately omits account-letter register codes rather than introducing durable assignment. Retain numbered section labels and adjacent full account name/address or installation owner beside counts, health and content. Do not derive letters from array positions, replace identity with a code, or use display numbering as provider/security identity. Study A01/B01 examples are not a production persistence requirement.
+Production deliberately omits account-letter register codes rather than introducing durable assignment. Retain numbered section labels and adjacent full account name/address or installation owner beside counts, health and content. Do not derive letters from array positions, replace identity with a code, or use display numbering as provider/security identity.
 
 ### M09 — Controls name intent and scope
 
@@ -132,7 +131,7 @@ Automatic startup generation requires both the Ash-persisted opt-in and enabling
 
 ### M11 — Motion is interruptible and nonessential
 
-Reuse canonical `identity.js:21–39` choreography: opposing ascending Outline contour/descending creases, or Solid rise-and-incise; completed mark rests before eight letter flips; then hold, lift and dissolve. Contour/silhouette lasts 1600ms after 180ms; creases 1100ms after 1100ms and 500ms after 1850ms; letters 600ms after 2600ms plus 85ms each. The last crease ends at 2350ms, leaving 250ms before letters. Hold 360ms; mark exit 900ms after 150ms, letters exit at accelerated 1.8× timing. About 5.2 seconds total. Completed artwork equals the static lockup; no moving faces/shading or Outline clip-wipe substitute.
+Canonical identity choreography uses opposing ascending Outline contour/descending creases, or Solid rise-and-incise; completed mark rests before eight letter flips; then hold, lift and dissolve. Contour/silhouette lasts 1600ms after 180ms; creases 1100ms after 1100ms and 500ms after 1850ms; letters 600ms after 2600ms plus 85ms each. The last crease ends at 2350ms, leaving 250ms before letters. Hold 360ms; mark exit 900ms after 150ms, letters exit at accelerated 1.8× timing. About 5.2 seconds total. Completed artwork equals the static lockup; no moving faces/shading or Outline clip-wipe substitute.
 
 Inline proof is manual, no autoplay/loop; Replay replaces one sequence, never overlaps. Stop/Escape, route/selection/scenery changes and print cancel it, restoring completed identity; reduced motion shows static completion. Ordinary UI transitions remain scene 800ms, working plane 650ms, navigation 320ms, not identity timing controls.
 
@@ -144,14 +143,13 @@ Measure actual scenery/glass composites: ordinary text ≥4.5:1; large text and 
 
 Prove keyboard access, visible focus, 320px layout, 200% text zoom and 400% page zoom, long/bidi identities and expanded labels, reduced motion including mid-sequence changes, forced colors and print. Preserve names/counts/errors/current navigation, wrap without overlap or page-level horizontal scroll. Forced colors removes scenery and uses system colors; reduced motion/print preserves complete identity/signals. Print keeps readable dark-on-white content/labels/rules and removes decorative chrome/motion. Neutral logo reproduction plates have explicit print-polarity exceptions. Programmatically focused headings may suppress their own outline; actionable focus may not.
 
-## Conflicts and non-rules
+## Non-rules and evidence limits
 
-- `voice.js:30,49` retains study-only naming; the production identity includes the full application/runtime/library/tooling rename.
-- Old palettes, top navigation, identity/motion, unknown-signal visuals, hidden status tooltips and workspace rename menus are retired presentation, not alternate requirements. Preserve security/state invariants, including no implication that unknown means an active check.
-- Generic no-arrow guidance conflicts with arrows in identity/unlock examples. Follow explicit ordinary-navigation guidance; do not invent a universal icon ban or mechanically enforce every specimen string. Native modal shadow/backdrop is a scoped source exception, not a content-card convention.
-- Combined proof/sidebar Escape has a source mismatch: `study.js:552–556` cancels active Identity playback and returns before collapsing expanded navigation, while Components requires sidebar collapse/focus return. Preserve both cancellation and navigation requirements when implementing that combined state; do not copy the early-return conflict. This source finding is not a browser-certified failure on Home/Workspaces, where proof playback is absent.
-- Frozen times/counts, invented identities/workspaces, hash routes, in-memory settings, local substring search, noneditable credentials and simulated scene/provider actions are study limitations, never production implementations.
-- Checklists, source assertions and historical screenshots are not fresh runtime evidence. This document defines acceptance, not a claim that the study or app passes it. Unresolved material conflicts require caller resolution, not silent invention.
+- Retired palettes and alternative designs are not additional requirements. Preserve security/state invariants, including no implication that unknown means an active check.
+- Ordinary-navigation guidance is not a universal icon ban. Native modal shadow/backdrop is a scoped exception, not a content-card convention.
+- Identity playback cancellation and sidebar Escape/focus behavior must both remain correct when combined.
+- Frozen demo data, hash routing and simulated provider operations are not production implementations.
+- Checklists, source assertions and historical screenshots are not fresh runtime evidence. This document defines acceptance, not a claim that the app passes it. Unresolved material conflicts require caller resolution, not silent invention.
 
 ## Enforcement and evidence
 

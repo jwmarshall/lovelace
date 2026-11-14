@@ -12,8 +12,8 @@ defmodule MonolithWeb.StatusComponents do
   attr :embedded, :boolean, default: false
   attr :tone, :atom, default: :auto, values: [:auto, :error]
 
-  # Geometry and motion are authored in monolith-study/signals; status.css owns
-  # their integrated styling. A signal never becomes a keyboard stop or loader logo.
+  # Canonical signal geometry lives here; status.css owns motion and styling.
+  # A signal never becomes a keyboard stop or loader logo.
   def status_signal(assigns) do
     ~H"""
     <span

@@ -1,6 +1,6 @@
 /* MONOLITH foundations. Charcoal is the only working interface.
-   Canonical decisions originate in design-concepts/monolith-study/tokens.css;
-   existing component primitives below consume them, never own a second palette. */
+   Shared decisions live here under docs/MONOLITH_DESIGN_SYSTEM.md;
+   component primitives consume them, never own a second palette. */
 :root {
   color-scheme: dark;
   /* Semantic color: reading, structural rules and bounded observed signals. */
