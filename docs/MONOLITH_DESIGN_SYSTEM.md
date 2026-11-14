@@ -57,6 +57,10 @@ Both use locally hosted Space Grotesk, weight 500, line-height 1.2. Display clea
 
 Local Space Grotesk is the reading/UI face; system monospace serves registers and technical metadata. Body is 16px/1.55, supporting text 13px. Normal prose uses sentence case and normal tracking; uppercase/tracked registers and the wordmark are deliberate exceptions.
 
+Metric labels default to Space Grotesk 400 at 13px/1.55, uppercase with normal tracking.
+Use the shared `metric-label` primitive and an 8px label/value gap when stacked above counts.
+Gmail and GitHub metrics share this default; section registers and technical metadata retain their own presets.
+
 Display headings use the fluid 42–82px preset; section registers use 12px/1.6 with .1em tracking; account titles use 23px/1.25 with -.03em tracking. These are not brand presets. Mail is 18px/1.8, reducing to 17px/1.75 at ≤760px, with a 68ch reading measure and 76ch outer reader. Introductory copy is bounded at 58ch. Long addresses, subjects, URLs and errors wrap without losing identity or causing page-level horizontal scrolling; scoped table overflow is allowed.
 
 Home email metrics use the shared GitHub `metric-label` style above counts: **UNREAD** and **LAST 24H**. Accessible descriptions retain unread inbox-conversation and rolling received-time meanings. Home omits per-account connection-warning copy; workspace readouts retain it, and connection recovery remains available.
@@ -82,6 +86,8 @@ Product links are 01 Home, 02 Workspaces, 03 Connections, 04 Scenes, 05 Settings
 Working content has no added top padding. Default working max width is 1440px, 1600px at ≥1700px; desktop outer gutter 32px and content separation 36px. Main Home/workspace readouts stack at ≤1200px; secondary dense grids simplify at ≤1080px and ≤440px. The ≤760px shell transition is not a ban on other content-fit thresholds: connection headers stack at ≤600px, status right-aligned above title/metadata. Identity/rhythm specimen thresholds 1000/800/600px do not create additional product shell modes.
 
 The shared shell owns the outer top inset: 24px, or 20px at ≤950px. Top-level numbered registers occupy a 44px row centered with the sidebar mark; content itself adds no top padding. Lock stays right-aligned beside the register/account context; at ≤760px return links wrap onto a following row. Home places **01 / Home** above the entire date/focus hero. The hero has no top or bottom hairline; its interior date divider and separate readout boundaries remain. Its Gmail empty state retains the decorative mail service icon; omit the redundant “Separate inboxes” label. The GitHub activity header has one bottom interior hairline, without doubled first-row borders.
+
+Home's date stacks the weekday above the large day number, with month/year below at every viewport. The weekday uses responsive 24–32px uppercase type and month/year uses 16px, with 8px gaps. The date container fits its contents within the available column width. Keep the browser-local date, midnight/resume updates and accessible full-date label.
 
 ### M07 — Color and signals communicate bounded facts
 
@@ -114,7 +120,7 @@ Google, Gemini and GitHub credential editors reuse the native modal shell and cl
 
 ### M10 — Quiet language, explicit consequences
 
-Voice is quiet, clear, considerate: state → consequence → specific action. Use natural contractions, sentence case and verb/object actions. Page titles end in a period; navigation/actions do not. Home alone may use **A day in focus.** Directory pages use title-only headers. Unlock uses mark/wordmark without a redundant **Locked** label, extra slogan/sidebar/task heading; accessible orientation must still exist. Preserve Google, Gmail, Calendar, GitHub and Gemini spelling.
+Voice is quiet, clear, considerate: state → consequence → specific action. Use natural contractions, sentence case and verb/object actions. Directory headings and navigation/actions have no added terminal period; preserve owner-entered workspace names as written. Home alone may use **A day in focus.** Directory pages use title-only headers. Unlock uses mark/wordmark without a redundant **Locked** label, extra slogan/sidebar/task heading; accessible orientation must still exist. Preserve Google, Gmail, Calendar, GitHub and Gemini spelling.
 
 No repeated greetings, praise for routine work, product persona, architectural metaphors in working copy, invented causes/repair times or reassuring “Don't worry.” Missing means confirmed absence; unavailable means unreadable; reconnect specifically repairs authorization. Name the account and actual observation. Announce real meaningful completion, not unchanged polls/timer ticks. Do not hide cost, password loss, provider storage, destruction or unknown-outcome warnings in transient toasts or shorten them to fit a decorative layout.
 

@@ -220,7 +220,6 @@ defmodule MonolithWeb.CalendarLiveTest do
     refute has_element?(view, "#calendar-agenda img")
     refute has_element?(view, "#calendar-agenda button[phx-click='calendar:refresh']")
     refute has_element?(view, "#calendar-agenda", "Last checked")
-    assert has_element?(view, "#calendar-agenda [data-warnings-only=true]")
     assert html =~ "&lt;img"
     refute inspect(:sys.get_state(view.pid).socket.assigns) =~ "calendar-fixture.invalid"
     assert Mail.list_workspace_accounts!(actor: @owner) |> length() == 1
@@ -236,7 +235,6 @@ defmodule MonolithWeb.CalendarLiveTest do
     render_click(view, "open_workspace", %{"id" => ctx.workspace.id})
     assert has_element?(view, "#calendar-agenda-account-#{ctx.a.id}")
     assert has_element?(view, "#calendar-agenda button[phx-click='calendar:refresh']", "Refresh")
-    assert has_element?(view, "#calendar-agenda [data-warnings-only=false]")
     refute has_element?(view, "#calendar-agenda-account-#{ctx.b.id}")
     view |> element("#home-link") |> render_click()
     assert has_element?(view, "#calendar-agenda-account-#{ctx.b.id}")

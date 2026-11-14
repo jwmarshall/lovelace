@@ -444,7 +444,11 @@ try do
         id:
           if(number == 5, do: "00000000-0000-4000-8000-000000000005", else: Ecto.UUID.generate()),
         subject: "synthetic-extra-browser-account-#{number}",
-        email: "secondary-#{number}@example.test",
+        email:
+          if(number == 4,
+            do: "longer.address@example.test",
+            else: "secondary-#{number}@example.test"
+          ),
         generation: Ecto.UUID.generate()
       },
       actor: owner

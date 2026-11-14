@@ -846,27 +846,27 @@ defmodule MonolithWeb.HomeLive do
     end
   end
 
-  defp view_heading(%{settings: true}), do: "Settings."
-  defp view_heading(%{scenes: true}), do: "Scenes."
-  defp view_heading(%{connections: true, connection_view: :index}), do: "Connections."
+  defp view_heading(%{settings: true}), do: "Settings"
+  defp view_heading(%{scenes: true}), do: "Scenes"
+  defp view_heading(%{connections: true, connection_view: :index}), do: "Connections"
 
   defp view_heading(%{connections: true, connection_view: provider}) do
     Map.fetch!(
       %{
-        google: "Google.",
-        gmail: "Gmail.",
-        calendar: "Calendar.",
-        gemini: "Gemini.",
-        github: "GitHub."
+        google: "Google",
+        gmail: "Gmail",
+        calendar: "Calendar",
+        gemini: "Gemini",
+        github: "GitHub"
       },
       provider
     )
   end
 
-  defp view_heading(%{mail: %{adding: true}}), do: "Use a connection again."
-  defp view_heading(%{selected: %{name: name}}), do: name <> "."
-  defp view_heading(%{mail: %{scope: :home}}), do: "Inbox."
-  defp view_heading(_assigns), do: "Workspaces."
+  defp view_heading(%{mail: %{adding: true}}), do: "Use a connection again"
+  defp view_heading(%{selected: %{name: name}}), do: name
+  defp view_heading(%{mail: %{scope: :home}}), do: "Inbox"
+  defp view_heading(_assigns), do: "Workspaces"
 
   defp view_register(assigns) do
     cond do
@@ -877,7 +877,7 @@ defmodule MonolithWeb.HomeLive do
         "04 / Scenes"
 
       assigns.connections ->
-        "03 / " <> String.trim_trailing(view_heading(assigns), ".")
+        "03 / " <> view_heading(assigns)
 
       assigns.mail.scope == :home ->
         "01 / Email"
@@ -1283,7 +1283,10 @@ defmodule MonolithWeb.HomeLive do
                   now={@github_now}
                 />
               </div>
-              <MonolithWeb.ConnectionComponents.context provider={@connection_view}>
+              <MonolithWeb.ConnectionComponents.context
+                provider={@connection_view}
+                gmail_accounts_present={@mail.accounts != []}
+              >
                 <:github_help>
                   <GitHubComponents.setup_help
                     :if={@connection_view == :github}

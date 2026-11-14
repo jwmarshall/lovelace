@@ -11,8 +11,9 @@ defmodule MonolithWeb.HomeComponents do
     <header id="daily-heading" class="home-hero" phx-hook="DailyOrientation" phx-update="ignore">
       <div class="date-block">
         <time data-daily-date class="daily-date">
+          <span data-daily-weekday class="date-caption"></span>
           <span data-daily-number class="day-number"></span>
-          <span class="date-caption"><span data-daily-weekday></span><span data-daily-month></span></span>
+          <span data-daily-month class="date-caption"></span>
         </time>
       </div>
       <div class="home-greeting">

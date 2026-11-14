@@ -111,7 +111,7 @@ summary { min-height: 44px; padding-block: 10px; cursor: pointer; }
 .page-register-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; min-height: 44px; margin-bottom: 12px; }
 .page-register, .section-register, .home-eyebrow { font: var(--type-section-size)/var(--type-section-leading) var(--font-mono); letter-spacing: var(--type-section-tracking); text-transform: uppercase; color: var(--muted); }
 .page-register-row > .page-register { flex: 1 1 16rem; min-width: 0; }
-.page-register-row .workspace-action-link { flex: 0 1 auto; min-width: 0; font-size: 12px; text-align: end; }
+.page-register-row .workspace-action-link { flex: 0 1 auto; min-width: 0; text-align: end; }
 .page-header-row { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; min-height: 44px; }
 .page-header-row > :first-child { flex: 1 1 0; min-width: 0; }
 .page-header-lock { flex: none; margin-left: auto; }

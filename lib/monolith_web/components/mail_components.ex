@@ -657,39 +657,6 @@ defmodule MonolithWeb.MailComponents do
           phx-click="mail:close_connection"
         >Cancel</button>
       </MonolithWeb.ModalComponents.modal>
-      <details
-        :if={@mail.accounts != []}
-        id="gmail-keychain-help"
-        class="mail-muted connection-help"
-        phx-mounted={JS.ignore_attributes("open")}
-      >
-        <summary>About Keychain access</summary>
-        <p>
-          Check Keychain reads only this account’s local credential. It does not contact Google,
-          change permissions, or refresh mail. A readable credential does not verify Google access.
-        </p>
-        <p>
-          MONOLITH uses its own password-locked keychain, separate from your login keychain.
-          Individual items can still deny access to the monolith-vault helper after a rebuild
-          changes its security identity. Preserve the vault and review access before rebuilding again.
-        </p>
-        <p>
-          Do not delete credentials or allow all applications. Rebuilding again is not an access
-          repair. Reconnect Google only for a missing credential or expired Google authorization.
-        </p>
-      </details>
-      <details
-        :if={@mail.accounts != []}
-        id="gmail-disconnect-help"
-        class="mail-muted connection-help"
-        phx-mounted={JS.ignore_attributes("open")}
-      >
-        <summary>Removal &amp; disconnecting</summary>
-        <p>
-          Remove from workspace only detaches that link. Disconnect everywhere removes all workspace links,
-          cached mail and credentials, and attempts Google revocation. Your Gmail mailbox is unchanged.
-        </p>
-      </details>
     </section>
     """
   end
@@ -759,7 +726,7 @@ defmodule MonolithWeb.MailComponents do
       </p>
       <p :if={@check.status == :locked}>
         An unlocked keychain can still deny this item. Review helper access in Keychain Access;
-        see About Keychain access below. No permissions were changed.
+        see About Keychain access in the connection guidance. No permissions were changed.
       </p>
       <p :if={@check.status == :timeout}>
         The local helper did not respond in time. This does not establish a Google failure.

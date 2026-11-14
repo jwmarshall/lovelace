@@ -22,6 +22,8 @@ Display stacked lockup: 104px mark, 24px wordmark, `.22em` tracking, 24px gap, a
 
 Use local Space Grotesk for reading/UI and system monospace for registers/technical metadata. Body 16px/1.55; supporting text 13px. Prose uses sentence case and normal tracking; deliberate exceptions are uppercase/tracked registers and the wordmark. Display headings use fluid 42–82px, section registers 12px/1.6 with `.1em` tracking, account titles 23px/1.25 with `-.03em` tracking; these are not brand lockups. Mail uses 18px/1.8, becoming 17px/1.75 at ≤760px, 68ch reading measure and 76ch outer reader. Introductory copy is bounded at 58ch. Long addresses/subjects/URLs/errors wrap without hiding identity or causing page-level horizontal scroll; scoped table overflow is allowed.
 
+Metric labels default to Space Grotesk 400 at 13px/1.55, uppercase with normal tracking. Use the shared `metric-label` primitive and an 8px label/value gap when stacked above counts. Gmail and GitHub metrics share this default; section registers and technical metadata retain their own presets.
+
 ## M05 — Semantic rhythm
 
 Spacing ladder: 4/8/12/16/24/32/48px. Label/control 8px; heading/copy 12px; related content 16px; groups 24px; header/content 32px; independent sections 48px. One parent owns a gap; no stacked child margins/spacers or grid-snapped line heights. Wrapping changes height, not the next semantic gap. Measured unit-04 specimens are relationship examples, not permission to rewrite every margin. Exception: a disclosure following content adds 16px top margin outside its hairline even with parent stack gap. First-child disclosures need none; designer toolbar stays flush.

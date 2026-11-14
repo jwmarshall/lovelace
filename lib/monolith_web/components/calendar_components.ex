@@ -434,7 +434,7 @@ defmodule MonolithWeb.CalendarComponents do
         <p :if={@snapshot.selection_truncated} class="calendar-warning">
           Not all calendars could be included. Choose up to 20 calendars in Connections.
         </p>
-        <p :if={@snapshot.stale && !@snapshot.error} class="calendar-warning">
+        <p :if={!@warnings_only && @snapshot.stale && !@snapshot.error} class="calendar-warning">
           Showing a previous local copy; it may no longer match Google Calendar.
         </p>
         <.status_signal
@@ -445,14 +445,13 @@ defmodule MonolithWeb.CalendarComponents do
         />
       </div>
       <span
-        :if={iso(@snapshot.fetched_at)}
+        :if={!@warnings_only && iso(@snapshot.fetched_at)}
         id={"#{@id}-observed"}
         phx-hook="ObservationTime"
         phx-update="ignore"
         data-observed-at={iso(@snapshot.fetched_at)}
-        data-warnings-only={to_string(@warnings_only)}
         data-failed={to_string(not is_nil(@snapshot.error) || @snapshot.truncated || @snapshot.stale)}
-      >{if !@warnings_only, do: "Last checked · #{iso(@snapshot.fetched_at)}"}</span>
+      >Last checked · {iso(@snapshot.fetched_at)}</span>
     </div>
     """
   end

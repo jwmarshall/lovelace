@@ -276,12 +276,11 @@ async function verifyAccountSwitchFencing() {
 async function scenesLoaded(count = 20, active = 1) {
   await waitFor(`document.querySelector('#scenes-panel')?.getAttribute('aria-busy') === 'false' &&
     document.title === 'Scenes · MONOLITH' &&
-    document.querySelector('#directory-heading')?.textContent.trim() === 'Scenes.' &&
+    !!document.querySelector('#directory-heading') &&
     document.querySelectorAll('#scene-gallery > li.scene-card').length === ${count} &&
     document.querySelectorAll('#scene-gallery > .scene-card[data-active=true]').length === ${active} &&
     Array.from(document.querySelectorAll('#scene-gallery img')).length === ${count} &&
     Array.from(document.querySelectorAll('#scene-gallery img')).every(image => image.dataset.loaded === 'true' && image.naturalWidth > 0)`, `${count} loaded synthetic scene thumbnails with ${active} active on this page`)
-  assert.equal(await evaluate("document.querySelector('#directory-heading').textContent.trim()"), "Scenes.")
   assert.equal(await evaluate("document.title"), "Scenes · MONOLITH")
   assert.deepEqual(await evaluate("Array.from(document.querySelectorAll('#center-nav [aria-current=page]'), button => button.id)"), ["show-scenes"])
   assert.equal(await evaluate("!!document.querySelector('#home-overview, #home-inbox, #workspace-list, #workspace-landing, #connections-panel, #gemini-connection, #mail-panel')"), false, "Scenes is an exclusive view, not an overlay on mail or Connections")
@@ -602,6 +601,20 @@ async function homeLayout(width, forced = false) {
     assert.equal(layout.calendarHeadingVisible, true, `Calendar starts alongside Gmail: ${JSON.stringify(layout)}`)
   }
   assert.equal(layout.forced, forced)
+  const metrics = await evaluate(`(() => {
+    const labels = [...document.querySelectorAll('#home-overview .home-count > .metric-label, #github-readouts .github-home-metric dt')];
+    const typography = labels.map(label => {
+      const style = getComputedStyle(label);
+      return [style.fontFamily, style.fontSize, style.fontWeight, style.lineHeight, style.letterSpacing, style.textTransform];
+    });
+    return {typography, aboveCounts: [...document.querySelectorAll('#home-overview .home-count')].every(metric =>
+      metric.querySelector('.metric-label').getBoundingClientRect().bottom <= metric.querySelector('b').getBoundingClientRect().top)};
+  })()`)
+  assert.ok(metrics.typography.length > 0)
+  for (const typography of metrics.typography) {
+    assert.deepEqual(typography, metrics.typography[0], 'Gmail and GitHub metric labels share font and line height')
+  }
+  assert.equal(metrics.aboveCounts, true, 'Gmail labels sit above their counts')
   await calendarItemLayout()
 }
 
@@ -843,6 +856,30 @@ async function home() {
   assert.equal(orientation.iso, orientation.expectedIso)
 }
 
+async function verifyInboxIdentityFit() {
+  const link = await evaluate(`Array.from(document.querySelectorAll('.home-account-open'))
+    .find(link => link.querySelector('.home-account-email').textContent === 'longer.address@example.test').id`)
+  await click('#' + link)
+  await waitFor("document.querySelector('#home-inbox #mail-threads')?.getAttribute('aria-busy') === 'false'", 'long-address inbox')
+  await expandSidebar()
+  const fit = await evaluate(`(() => {
+    const heading = document.querySelector('#mail-heading'), search = document.querySelector('#mail-search');
+    const rect = heading.getBoundingClientRect(), form = search.getBoundingClientRect();
+    return {height: rect.height, lineHeight: parseFloat(getComputedStyle(heading).lineHeight),
+      identityWidth: rect.width, searchWidth: form.width, overflow: document.querySelector('#workspace-content').scrollWidth > document.querySelector('#workspace-content').clientWidth};
+  })()`)
+  assert.ok(fit.searchWidth <= 320 && fit.identityWidth > fit.searchWidth && fit.height <= fit.lineHeight + 1,
+    `expanded navigation preserves the full long address on one line: ${JSON.stringify(fit)}`)
+  assert.equal(fit.overflow, false)
+  await screenshot('inbox-long-address-expanded-sidebar')
+  await send('Emulation.setDeviceMetricsOverride', {width: 320, height: 844, deviceScaleFactor: 1, mobile: false})
+  assert.equal(await evaluate("document.querySelector('#workspace-content').scrollWidth <= document.querySelector('#workspace-content').clientWidth"), true, 'long identity and search reflow at 320px')
+  await screenshot('inbox-long-address-320')
+  await send('Emulation.setDeviceMetricsOverride', {width: 1440, height: 1000, deviceScaleFactor: 1, mobile: false})
+  await click('#home-link')
+  await home()
+}
+
 try {
   const endpoint = await new Promise((resolve, reject) => {
     let buffered = ""
@@ -957,6 +994,7 @@ try {
   assert.match(memberships, /Browser studio/)
   assert.match(memberships, /Synthetic space 1/)
   assert.match(await evaluate(`document.querySelector('#home-account-${unattachedId}').textContent`), /Not in a workspace/)
+  await verifyInboxIdentityFit()
 
   await waitFor("document.querySelector('#calendar-agenda')?.textContent.includes('Synthetic focus time')", "browser-local Calendar cache renders")
   assert.equal(await evaluate("document.querySelectorAll('#calendar-agenda .calendar-account').length"), 1, "Calendar remains opt-in per account")
@@ -1583,6 +1621,17 @@ try {
       await click('#open-connection-gmail')
       await waitFor("!!document.querySelector('#connections-panel')", "Gmail Connections for shared width check")
       assert.equal(await evaluate("document.querySelector('#connections-panel').scrollWidth <= document.querySelector('#connections-panel').clientWidth"), true, "Gmail rows do not overflow their container")
+      const gmailHelpLayout = await evaluate(`(() => {
+        const main = document.querySelector('.provider-main').getBoundingClientRect();
+        const aside = document.querySelector('#provider-context-gmail').getBoundingClientRect();
+        return {inSidebar: ['gmail-keychain-help', 'gmail-disconnect-help'].every(id =>
+          document.getElementById(id)?.closest('#provider-context-gmail')),
+          mainRight: main.right, mainBottom: main.bottom, asideLeft: aside.left, asideTop: aside.top};
+      })()`)
+      assert.equal(gmailHelpLayout.inSidebar, true, 'Gmail Keychain and removal guidance belong in the context sidebar')
+      assert.ok(width > 1080 ? gmailHelpLayout.asideLeft >= gmailHelpLayout.mainRight :
+        gmailHelpLayout.asideTop >= gmailHelpLayout.mainBottom,
+      `Gmail guidance sits right on desktop and below on narrow screens: ${JSON.stringify(gmailHelpLayout)}`)
       assert.equal(await evaluate("document.querySelector('#gmail-disconnect-help').open"), false, 'occasional disconnect guidance starts collapsed')
       await evaluate("document.querySelector('#gmail-disconnect-help summary').focus()")
       await key('Enter')

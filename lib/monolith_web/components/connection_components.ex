@@ -45,6 +45,7 @@ defmodule MonolithWeb.ConnectionComponents do
   end
 
   attr :provider, :atom, required: true, values: [:google, :gmail, :calendar, :gemini, :github]
+  attr :gmail_accounts_present, :boolean, default: false
   slot :github_help
 
   def context(assigns) do
@@ -111,18 +112,39 @@ defmodule MonolithWeb.ConnectionComponents do
               </p>
             </div>
           </details>
-          <details phx-mounted={JS.ignore_attributes("open")}>
-            <summary>Keychain checks and recovery</summary>
+          <details id="gmail-keychain-help" phx-mounted={JS.ignore_attributes("open")}>
+            <summary>About Keychain access</summary>
             <div class="provider-context-copy">
               <p>
-                Check Keychain checks local credentials. It does not contact Google,
-                refresh mail or verify permissions. An unavailable read is not proof
-                that a credential is missing or that Google revoked access.
+                Check Keychain reads only this account’s local credential. It does not contact Google,
+                change permissions, or refresh mail. A readable credential does not verify Google access.
+                An unavailable read is not proof that a credential is missing or that Google revoked access.
               </p>
               <p>
-                Credentials belong in the dedicated MONOLITH keychain. Native storage
-                access failures can lock the application. Reconnect repairs account
-                authorization; after a Gmail reconnect, enable Calendar again if needed.
+                MONOLITH uses its own password-locked keychain, separate from your login keychain.
+                Individual items can still deny access to the monolith-vault helper after a rebuild
+                changes its security identity. Preserve the vault and review access before rebuilding again.
+              </p>
+              <p>
+                Do not delete credentials or allow all applications. Rebuilding again is not an access
+                repair. Reconnect Google only for a missing credential or expired Google authorization.
+              </p>
+              <p>
+                Native storage access failures can lock the application. After a Gmail reconnect,
+                enable Calendar again if needed.
+              </p>
+            </div>
+          </details>
+          <details
+            :if={@gmail_accounts_present}
+            id="gmail-disconnect-help"
+            phx-mounted={JS.ignore_attributes("open")}
+          >
+            <summary>Removal &amp; disconnecting</summary>
+            <div class="provider-context-copy">
+              <p>
+                Remove from workspace only detaches that link. Disconnect everywhere removes all workspace links,
+                cached mail and credentials, and attempts Google revocation. Your Gmail mailbox is unchanged.
               </p>
             </div>
           </details>
