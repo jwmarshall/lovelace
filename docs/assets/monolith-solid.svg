@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="189" viewBox="0 0 240 189" fill="none" role="img" aria-labelledby="title desc">
+  <title id="title">MONOLITH</title>
+  <desc id="desc">Solid MONOLITH mark and Space Grotesk wordmark.</desc>
+  <!-- Mark: lib/monolith_web/components/layouts.ex; display preset: docs/MONOLITH_DESIGN_SYSTEM.md.
+       Wordmark: Space Grotesk by Florian Karsten, pinned font SHA-256
+       8e085aa438094f11487a836652edd5c054fa6a96f63fc7c282105ee3a4b08c07.
+       Font license and provenance: ../../priv/static/fonts/space-grotesk/{OFL.txt,README.md}. -->
+  <style>
+    :root { color: #121715; }
+    @media (prefers-color-scheme: dark) { :root { color: #f3f1e9; } }
+    @media print { :root { color: #121715; } }
+  </style>
+  <defs>
+    <mask id="solid-cutout" maskUnits="userSpaceOnUse" x="0" y="0" width="104" height="104" style="mask-type:luminance;forced-color-adjust:none">
+      <rect width="104" height="104" fill="#fff"/>
+      <path d="M20 64H52L82 20M52 64V84" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="square" stroke-linejoin="miter"/>
+    </mask>
+  </defs>
+  <g transform="translate(68 16)">
+    <path d="M20 64L50 20H82V40L52 84Z" fill="currentColor" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" stroke-linejoin="miter" mask="url(#solid-cutout)"/>
+  </g>
+<!-- Space Grotesk 500, 24px, .22em tracking; outlined from the pinned local font. -->
+<g transform="translate(42.3912 166.7038) scale(1 -1)" fill="currentColor">
+  <path d="M1.752 0L1.752 16.8L6.624 16.8L10.2923 1.7231L10.674 1.7231L14.3422 16.8L19.2142 16.8L19.2142 0L16.6969 0L16.6969 14.9678L16.3151 14.9678L12.6626 0L8.304 0L4.6511 14.9678L4.2698 14.9678L4.2698 0Z"/>
+  <path d="M34.3164 -0.336Q31.2242 -0.336 29.3942 1.404Q27.5642 3.144 27.5642 6.426L27.5642 10.374Q27.5642 13.656 29.3942 15.396Q31.2242 17.136 34.3164 17.136Q37.4087 17.136 39.2387 15.396Q41.0687 13.656 41.0687 10.374L41.0687 6.426Q41.0687 3.144 39.2387 1.404Q37.4087 -0.336 34.3164 -0.336ZM34.3164 1.992Q36.2942 1.992 37.3832 3.1584Q38.4722 4.3249 38.4722 6.3469L38.4722 10.4531Q38.4722 12.4751 37.3832 13.6416Q36.2942 14.808 34.3164 14.808Q32.3627 14.808 31.2617 13.6416Q30.1607 12.4751 30.1607 10.4531L30.1607 6.3469Q30.1607 4.3249 31.2617 3.1584Q32.3627 1.992 34.3164 1.992Z"/>
+  <path d="M49.4184 0L49.4184 16.8L54.401 16.8L58.9715 1.7231L59.3533 1.7231L59.3533 16.8L61.9187 16.8L61.9187 0L56.9364 0L52.3655 15.0851L51.9842 15.0851L51.9842 0Z"/>
+  <path d="M77.0208 -0.336Q73.9286 -0.336 72.0986 1.404Q70.2686 3.144 70.2686 6.426L70.2686 10.374Q70.2686 13.656 72.0986 15.396Q73.9286 17.136 77.0208 17.136Q80.1131 17.136 81.9431 15.396Q83.7731 13.656 83.7731 10.374L83.7731 6.426Q83.7731 3.144 81.9431 1.404Q80.1131 -0.336 77.0208 -0.336ZM77.0208 1.992Q78.9986 1.992 80.0876 3.1584Q81.1766 4.3249 81.1766 6.3469L81.1766 10.4531Q81.1766 12.4751 80.0876 13.6416Q78.9986 14.808 77.0208 14.808Q75.0671 14.808 73.9661 13.6416Q72.8651 12.4751 72.8651 10.4531L72.8651 6.3469Q72.8651 4.3249 73.9661 3.1584Q75.0671 1.992 77.0208 1.992Z"/>
+  <path d="M92.1228 0L92.1228 16.8L94.7197 16.8L94.7197 2.3591L102.8028 2.3591L102.8028 0Z"/>
+  <path d="M110.4528 0L110.4528 16.8L113.0497 16.8L113.0497 0Z"/>
+  <path d="M125.8394 0L125.8394 14.4409L120.6914 14.4409L120.6914 16.8L133.5839 16.8L133.5839 14.4409L128.4359 14.4409L128.4359 0Z"/>
+  <path d="M141.2256 0L141.2256 16.8L143.8225 16.8L143.8225 9.6037L150.8688 9.6037L150.8688 16.8L153.4656 16.8L153.4656 0L150.8688 0L150.8688 7.2443L143.8225 7.2443L143.8225 0Z"/>
+</g>
+</svg>
